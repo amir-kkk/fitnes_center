@@ -1,0 +1,49 @@
+@startuml booking
+title Запись на тренировку (с проверкой мест и дублей)
+
+actor "Клиент" as C
+participant "Frontend\n(React)" as F
+participant "BookingsController" as BC
+participant "BookingService" as BS
+database "PostgreSQL" as DB
+
+C -> F : Нажимает "Записаться"\nна карточке тренировки
+F -> BC : POST /api/bookings\n{trainingId}\n[Authorization: Bearer JWT]
+activate BC
+
+BC -> BS : CreateAsync(userId, dto)
+activate BS
+
+BS -> DB : SELECT Training + Bookings\nWHERE Training.Id = ?\nINCLUDE Bookings
+DB --> BS : Training {MaxParticipants: 15}\n+ Bookings (12 активных)
+
+note right of BS
+    Подсчёт: activeCount = Bookings
+    .Count(Status == Active)
+end note
+
+alt activeCount >= MaxParticipants
+    BS --> BC : InvalidOperationException
+    BC --> F : 400 {detail: "Все места заняты"}
+    F --> C : "Мест нет"
+else Места есть
+    BS -> DB : SELECT COUNT(*) FROM Bookings\nWHERE TrainingId = ? AND UserId = ?\nAND Status = Active
+    DB --> BS : count
+
+    alt count > 0 (уже записан)
+        BS --> BC : InvalidOperationException
+        BC --> F : 400 {detail: "Вы уже записаны"}
+        F --> C : Сообщение об ошибке
+    else Дубля нет
+        BS -> DB : INSERT INTO Bookings\n(TrainingId, UserId, Status = "Active")
+        DB --> BS : Booking {Id: 77}
+
+        BS --> BC : BookingDto
+        deactivate BS
+        BC --> F : 200 OK {id: 77, status: "Active"}
+        deactivate BC
+        F --> C : "Вы записаны на тренировку!"
+    end
+end
+
+@enduml

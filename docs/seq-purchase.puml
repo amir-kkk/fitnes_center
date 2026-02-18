@@ -1,0 +1,61 @@
+@startuml purchase
+title Покупка абонемента (создание + имитация оплаты)
+
+actor "Клиент" as C
+participant "Frontend\n(React)" as F
+participant "PurchasesController" as PC
+participant "PurchaseService" as PS
+database "PostgreSQL" as DB
+
+== Шаг 1: Создание покупки ==
+
+C -> F : Нажимает "Купить"\nна карточке абонемента
+F -> PC : POST /api/purchases\n{membershipId}\n[Authorization: Bearer JWT]
+activate PC
+
+PC -> PS : CreateAsync(userId, dto)
+activate PS
+
+PS -> DB : SELECT * FROM Memberships\nWHERE Id = ?
+DB --> PS : Membership {Price: 4500}
+
+note right of PS
+    Фиксируем цену на момент покупки
+    (PriceAtPurchase = Membership.Price)
+end note
+
+PS -> DB : INSERT INTO Purchases\n(UserId, MembershipId, PriceAtPurchase,\nStatus = "Pending")
+DB --> PS : Purchase {Id: 42}
+
+PS --> PC : PurchaseDto {id: 42, status: "Pending"}
+deactivate PS
+PC --> F : 200 OK {id: 42, status: "Pending"}
+deactivate PC
+
+== Шаг 2: Имитация оплаты ==
+
+F -> PC : POST /api/purchases/42/pay\n[Authorization: Bearer JWT]
+activate PC
+
+PC -> PS : PayAsync(id: 42, userId)
+activate PS
+
+PS -> DB : SELECT * FROM Purchases\nWHERE Id = 42 AND UserId = ?
+DB --> PS : Purchase {Status: "Pending"}
+
+alt Уже оплачено
+    PS --> PC : InvalidOperationException
+    PC --> F : 400 {detail: "Покупка уже оплачена"}
+    F --> C : Сообщение об ошибке
+else Статус Pending
+    PS -> DB : UPDATE Purchases\nSET Status = "Paid"\nWHERE Id = 42
+    DB --> PS : OK
+
+    PS --> PC : PurchaseDto {id: 42, status: "Paid"}
+    deactivate PS
+    PC --> F : 200 OK {status: "Paid"}
+    deactivate PC
+    F --> C : "Абонемент успешно оплачен!"
+end
+
+@enduml

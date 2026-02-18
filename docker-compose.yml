@@ -18,11 +18,11 @@ services:
       timeout: 5s
       retries: 10
 
-  # ═══ ASP.NET Core API ═══
-  backend:
+  # ═══ Приложение (ASP.NET Core раздаёт и API, и фронтенд) ═══
+  app:
     build:
-      context: ./backend
-      dockerfile: FitnessCenter.API/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
     depends_on:
@@ -36,15 +36,6 @@ services:
       - JwtSettings__ExpireMinutes=120
     volumes:
       - uploads:/app/wwwroot/uploads
-
-  # ═══ React Frontend (nginx) ═══
-  frontend:
-    build:
-      context: ./frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
 
 volumes:
   pgdata:

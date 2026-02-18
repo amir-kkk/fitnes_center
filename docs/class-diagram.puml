@@ -1,0 +1,118 @@
+@startuml class-diagram
+title Диаграмма классов (сущности предметной области)
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+enum PurchaseStatus {
+    Pending
+    Paid
+}
+
+enum BookingStatus {
+    Active
+    Cancelled
+}
+
+class User {
+    +Id : Guid <<PK>>
+    +Email : string <<unique>>
+    +PasswordHash : string
+    +Role : string
+    +FullName : string
+    +CreatedAt : DateTime
+}
+
+class Membership {
+    +Id : int <<PK>>
+    +Name : string
+    +Description : string
+    +Price : decimal <<index>>
+    +DurationDays : int
+    +CreatedAt : DateTime
+}
+
+class MembershipOption {
+    +Id : int <<PK>>
+    +MembershipId : int <<FK>>
+    +OptionText : string
+}
+
+class Category {
+    +Id : int <<PK>>
+    +Name : string
+}
+
+class Coach {
+    +Id : int <<PK>>
+    +FullName : string
+    +PhotoUrl : string?
+    +Specialization : string?
+}
+
+class Training {
+    +Id : int <<PK>>
+    +CategoryId : int <<FK, index>>
+    +CoachId : int <<FK>>
+    +Description : string
+    +CoachPhotoUrl : string?
+    +StartTime : DateTime <<index>>
+    +MaxParticipants : int
+}
+
+class Purchase {
+    +Id : int <<PK>>
+    +UserId : Guid <<FK>>
+    +MembershipId : int <<FK>>
+    +PriceAtPurchase : decimal
+    +Status : PurchaseStatus
+    +CreatedAt : DateTime
+}
+
+class Booking {
+    +Id : int <<PK>>
+    +TrainingId : int <<FK>>
+    +UserId : Guid <<FK>>
+    +Status : BookingStatus
+    --
+    <<unique index>>
+    (TrainingId, UserId)
+    WHERE Status = Active
+}
+
+class ProgressTracker {
+    +Id : int <<PK>>
+    +UserId : Guid <<FK>>
+    +Title : string
+    +GoalValue : double
+    +Unit : string
+    +CreatedAt : DateTime
+}
+
+class ProgressEntry {
+    +Id : int <<PK>>
+    +TrackerId : int <<FK>>
+    +Value : double
+    +DateRecorded : DateTime
+}
+
+' ═══ Связи ═══
+
+User "1" --> "*" Purchase
+User "1" --> "*" Booking
+User "1" --> "*" ProgressTracker
+
+Membership "1" --> "*" MembershipOption : содержит >
+Membership "1" --> "*" Purchase
+
+Category "1" --> "*" Training : тип >
+Coach "1" --> "*" Training : ведёт >
+
+Training "1" --> "*" Booking
+
+ProgressTracker "1" --> "*" ProgressEntry : замеры >
+
+Purchase --> PurchaseStatus
+Booking --> BookingStatus
+
+@enduml

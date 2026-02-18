@@ -1,0 +1,47 @@
+@startuml register
+title Регистрация пользователя
+
+actor "Клиент" as C
+participant "Frontend\n(React)" as F
+participant "AuthController" as AC
+participant "AuthService" as AS
+database "PostgreSQL" as DB
+
+C -> F : Заполняет форму\n(email, пароль, ФИО)
+F -> AC : POST /api/auth/register\n{email, password, fullName}
+activate AC
+
+AC -> AS : RegisterAsync(dto)
+activate AS
+
+AS -> DB : SELECT * FROM Users\nWHERE Email = ?
+DB --> AS : Результат
+
+alt Email уже занят
+    AS --> AC : InvalidOperationException
+    AC --> F : 400 Bad Request\n{detail: "Email уже существует"}
+    F --> C : Сообщение об ошибке
+else Email свободен
+    AS -> AS : BCrypt.HashPassword(password)
+    note right: Хеширование пароля\nалгоритмом BCrypt
+
+    AS -> DB : INSERT INTO Users\n(Id, Email, PasswordHash, Role, FullName)
+    DB --> AS : OK
+
+    AS -> AS : GenerateToken(user)
+    note right
+        Генерация JWT:
+        Claims: sub, email, role, fullName
+        Подпись: HMAC-SHA256
+        Срок: 120 мин
+    end note
+
+    AS --> AC : AuthResponse {token, user}
+    deactivate AS
+    AC --> F : 200 OK {token, user}
+    deactivate AC
+    F -> F : localStorage.setItem("token", token)
+    F --> C : Редирект на главную
+end
+
+@enduml

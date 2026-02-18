@@ -1,0 +1,61 @@
+@startuml coach-photo
+title Загрузка фото тренера (из локального файла)
+
+actor "Администратор" as C
+participant "Frontend\n(React)" as F
+participant "CoachesController" as CC
+participant "TrainingService" as TS
+database "PostgreSQL" as DB
+participant "Файловая\nсистема" as FS
+
+C -> F : Выбирает файл фото\nв диалоге редактирования тренера
+F -> F : Превью через FileReader API
+
+C -> F : Нажимает "Сохранить"
+
+== Сохранение данных тренера ==
+F -> CC : PUT /api/coaches/{id}\n{fullName, specialization}\n[Authorization: Bearer JWT]
+CC -> TS : UpdateCoachAsync(id, dto)
+TS -> DB : UPDATE Coaches SET ...
+CC --> F : 200 OK
+
+== Загрузка фото ==
+F -> CC : POST /api/coaches/{id}/photo\n[Content-Type: multipart/form-data]\nfile: photo.jpg
+activate CC
+
+CC -> CC : Валидация файла
+note right
+    Проверки:
+    • Размер ≤ 5 МБ
+    • Формат: jpg, png, webp
+end note
+
+alt Файл невалиден
+    CC --> F : 400 {detail: "Файл слишком большой / неверный формат"}
+    F --> C : Сообщение об ошибке
+else Файл валиден
+    CC -> TS : UploadCoachPhotoAsync(id, file, webRootPath)
+    activate TS
+
+    TS -> DB : SELECT * FROM Coaches\nWHERE Id = ?
+    DB --> TS : Coach {PhotoUrl: "/uploads/coaches/old.jpg"}
+
+    TS -> FS : File.Delete(old.jpg)
+    note right: Удаление старого фото\n(если существует)
+
+    TS -> FS : FileStream.Create(\n"wwwroot/uploads/coaches/{id}_{guid}.jpg")
+    TS -> FS : file.CopyToAsync(stream)
+    FS --> TS : OK
+
+    TS -> DB : UPDATE Coaches\nSET PhotoUrl = "/uploads/coaches/{id}_{guid}.jpg"
+    DB --> TS : OK
+
+    TS --> CC : CoachDto {photoUrl: "..."}
+    deactivate TS
+    CC --> F : 200 OK {photoUrl: "..."}
+    deactivate CC
+    F -> F : Обновление превью
+    F --> C : Фото обновлено
+end
+
+@enduml

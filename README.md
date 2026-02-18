@@ -12,26 +12,49 @@
 | **Auth** | JWT + Role-Based Access Control (Admin / User) |
 | **DevOps** | Docker, Docker Compose |
 
+## Архитектура
+
+Backend (ASP.NET Core) выполняет две роли:
+1. **REST API** — обрабатывает запросы на `/api/*`
+2. **Раздача фронтенда** — собранные файлы React-приложения лежат в `wwwroot/`, всё остальное отдаётся как `index.html` (SPA fallback через `MapFallbackToFile`)
+
+Это стандартный паттерн хостинга SPA в ASP.NET Core — один процесс, один порт, никаких проксей.
+
 ## Быстрый запуск
 
 ```bash
-# Клонировать и запустить (единственная команда)
 docker compose up --build
 ```
 
 После запуска:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
+- **Приложение**: http://localhost:5000
 - **Swagger UI**: http://localhost:5000/swagger
 
 ### Тестовый администратор
 - Email: `admin@test.com`
 - Пароль: `Admin123!`
 
+### Локальная разработка (без Docker)
+
+```bash
+# Терминал 1: Backend
+cd backend/FitnessCenter.API
+dotnet run
+
+# Терминал 2: Frontend (Vite dev-сервер с прокси на :5000)
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend dev-сервер на порту 3000 автоматически проксирует `/api` на бэкенд (порт 5000) через настройку в `vite.config.ts`.
+
 ## Структура проекта
 
 ```
 Fitness_web/
+├── Dockerfile              # Multi-stage: сборка фронта + бэка в один образ
+├── docker-compose.yml      # PostgreSQL + приложение
 ├── backend/
 │   ├── FitnessCenter.sln
 │   └── FitnessCenter.API/
@@ -42,8 +65,7 @@ Fitness_web/
 │       ├── Models/          # Сущности EF Core
 │       ├── Services/        # Бизнес-логика
 │       ├── Validators/      # FluentValidation
-│       ├── Program.cs       # Точка входа
-│       └── Dockerfile
+│       └── Program.cs       # Точка входа + SPA fallback
 ├── frontend/
 │   ├── src/
 │   │   ├── api/            # Axios HTTP-клиент
@@ -52,13 +74,22 @@ Fitness_web/
 │   │   │   └── admin/      # Админ-панель
 │   │   ├── stores/         # Zustand (auth, notification, cart)
 │   │   ├── types/          # TypeScript-типы
-│   │   ├── App.tsx         # Маршрутизация
+│   │   ├── App.tsx         # Маршрутизация (React Router)
 │   │   └── main.tsx        # Точка входа
-│   ├── Dockerfile
-│   └── nginx.conf
-├── docker-compose.yml
+│   ├── vite.config.ts      # Vite + прокси для dev-режима
+│   └── package.json
 └── README.md
 ```
+
+## Docker-сборка
+
+`Dockerfile` использует multi-stage build:
+
+1. **Этап 1 (node:20)** — `npm install` + `npm run build` → собирает React в `dist/`
+2. **Этап 2 (dotnet/sdk:8.0)** — `dotnet restore` + `dotnet publish` → собирает API
+3. **Этап 3 (dotnet/aspnet:8.0)** — копирует publish-артефакты бэкенда + `dist/` фронтенда в `wwwroot/`
+
+Результат: один контейнер, один порт (5000), ASP.NET Core раздаёт всё.
 
 ## ER-диаграмма (связи сущностей)
 
@@ -93,7 +124,7 @@ Training (*) ──→ (1) Coach
 
 ## API эндпоинты
 
-Полная документация доступна в **Swagger UI**: http://localhost:5000/swagger
+Полная документация: **Swagger UI** → http://localhost:5000/swagger
 
 ### Аутентификация
 | Метод | Путь | Описание |
@@ -105,7 +136,7 @@ Training (*) ──→ (1) Coach
 ### Абонементы
 | Метод | Путь | Описание |
 |-------|------|----------|
-| GET | `/api/memberships?page=1&pageSize=10&minPrice=&maxPrice=&search=` | Список (пагинация + фильтрация) |
+| GET | `/api/memberships?page=1&pageSize=10&minPrice=&maxPrice=&search=` | Список |
 | GET | `/api/memberships/{id}` | Детали |
 | POST | `/api/memberships` | Создать (Admin) |
 | PUT | `/api/memberships/{id}` | Обновить (Admin) |
@@ -119,6 +150,15 @@ Training (*) ──→ (1) Coach
 | PUT | `/api/trainings/{id}` | Обновить (Admin) |
 | DELETE | `/api/trainings/{id}` | Удалить (Admin) |
 
+### Тренеры
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/api/coaches` | Список тренеров |
+| POST | `/api/coaches` | Создать (Admin) |
+| PUT | `/api/coaches/{id}` | Обновить (Admin) |
+| DELETE | `/api/coaches/{id}` | Удалить (Admin) |
+| POST | `/api/coaches/{id}/photo` | Загрузить фото (multipart/form-data, Admin) |
+
 ### Покупки
 | Метод | Путь | Описание |
 |-------|------|----------|
@@ -131,26 +171,17 @@ Training (*) ──→ (1) Coach
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | `/api/bookings/my` | Мои записи |
-| POST | `/api/bookings` | Записаться на тренировку |
-| DELETE | `/api/bookings/{id}` | Отменить запись |
+| POST | `/api/bookings` | Записаться |
+| DELETE | `/api/bookings/{id}` | Отменить |
 
 ### Прогресс
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | `/api/progress/trackers` | Мои трекеры |
 | POST | `/api/progress/trackers` | Создать трекер |
-| DELETE | `/api/progress/trackers/{id}` | Удалить трекер |
+| DELETE | `/api/progress/trackers/{id}` | Удалить |
 | GET | `/api/progress/trackers/{id}/entries` | Записи трекера |
 | POST | `/api/progress/trackers/{id}/entries` | Добавить замер |
-
-### Тренеры
-| Метод | Путь | Описание |
-|-------|------|----------|
-| GET | `/api/coaches` | Список тренеров |
-| POST | `/api/coaches` | Создать тренера (Admin) |
-| PUT | `/api/coaches/{id}` | Обновить тренера (Admin) |
-| DELETE | `/api/coaches/{id}` | Удалить тренера (Admin) |
-| POST | `/api/coaches/{id}/photo` | Загрузить фото (multipart/form-data, Admin) |
 
 ### Администрирование
 | Метод | Путь | Описание |
@@ -174,7 +205,7 @@ Training (*) ──→ (1) Coach
 - Управление пользователями (смена ролей)
 - CRUD тренеров (с загрузкой фото из файла)
 - CRUD абонементов
-- CRUD тренировок (тренер выбирается из списка, фото берётся от тренера)
+- CRUD тренировок (тренер выбирается из списка)
 - Просмотр всех покупок
 
 ## Безопасность

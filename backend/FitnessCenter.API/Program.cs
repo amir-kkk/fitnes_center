@@ -106,4 +106,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+// SPA fallback: все маршруты, не совпавшие с API или статикой,
+// отдают index.html — дальше React Router обрабатывает роутинг на клиенте
+app.MapFallbackToFile("index.html");
+
 app.Run();

@@ -1,0 +1,45 @@
+@startuml login
+title Авторизация пользователя
+
+actor "Клиент" as C
+participant "Frontend\n(React)" as F
+participant "AuthController" as AC
+participant "AuthService" as AS
+database "PostgreSQL" as DB
+
+C -> F : Вводит email и пароль
+F -> AC : POST /api/auth/login\n{email, password}
+activate AC
+
+AC -> AS : LoginAsync(dto)
+activate AS
+
+AS -> DB : SELECT * FROM Users\nWHERE Email = ?
+DB --> AS : Результат
+
+alt Пользователь не найден
+    AS --> AC : KeyNotFoundException
+    AC --> F : 404 Not Found\n{detail: "Неверный email или пароль"}
+    F --> C : Сообщение об ошибке
+else Пользователь найден
+    AS -> AS : BCrypt.Verify(password, user.PasswordHash)
+    note right: Сравнение введённого\nпароля с хешем из БД
+
+    alt Пароль неверный
+        AS --> AC : KeyNotFoundException
+        AC --> F : 404 Not Found\n{detail: "Неверный email или пароль"}
+        F --> C : Сообщение об ошибке
+    else Пароль верный
+        AS -> AS : GenerateToken(user)
+        note right: JWT с claims:\nsub, email, role
+
+        AS --> AC : AuthResponse {token, user}
+        deactivate AS
+        AC --> F : 200 OK {token, user}
+        deactivate AC
+        F -> F : localStorage.setItem("token", token)
+        F --> C : Редирект на главную
+    end
+end
+
+@enduml
