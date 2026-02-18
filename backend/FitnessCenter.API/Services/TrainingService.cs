@@ -1,6 +1,7 @@
 using FitnessCenter.API.Data;
 using FitnessCenter.API.DTOs;
 using FitnessCenter.API.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace FitnessCenter.API.Services;
@@ -116,6 +117,57 @@ public class TrainingService
         _db.Coaches.Add(entity);
         await _db.SaveChangesAsync();
         return new CoachDto(entity.Id, entity.FullName, entity.PhotoUrl, entity.Specialization);
+    }
+
+    public async Task<CoachDto> UpdateCoachAsync(int id, UpdateCoachDto dto)
+    {
+        var coach = await _db.Coaches.FindAsync(id)
+            ?? throw new KeyNotFoundException("Тренер не найден");
+        coach.FullName = dto.FullName;
+        coach.Specialization = dto.Specialization;
+        await _db.SaveChangesAsync();
+        return new CoachDto(coach.Id, coach.FullName, coach.PhotoUrl, coach.Specialization);
+    }
+
+    public async Task DeleteCoachAsync(int id)
+    {
+        var coach = await _db.Coaches.Include(c => c.Trainings).FirstOrDefaultAsync(c => c.Id == id)
+            ?? throw new KeyNotFoundException("Тренер не найден");
+        if (coach.Trainings.Any())
+            throw new InvalidOperationException("Нельзя удалить тренера с назначенными тренировками");
+        _db.Coaches.Remove(coach);
+        await _db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Загрузка фото тренера из файла — сохраняет в wwwroot/uploads/coaches/
+    /// </summary>
+    public async Task<CoachDto> UploadCoachPhotoAsync(int id, IFormFile file, string webRootPath)
+    {
+        var coach = await _db.Coaches.FindAsync(id)
+            ?? throw new KeyNotFoundException("Тренер не найден");
+
+        var uploadsDir = Path.Combine(webRootPath, "uploads", "coaches");
+        Directory.CreateDirectory(uploadsDir);
+
+        // Удаляем старое фото
+        if (!string.IsNullOrEmpty(coach.PhotoUrl) && coach.PhotoUrl.StartsWith("/uploads/"))
+        {
+            var oldPath = Path.Combine(webRootPath, coach.PhotoUrl.TrimStart('/'));
+            if (File.Exists(oldPath)) File.Delete(oldPath);
+        }
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var fileName = $"{id}_{Guid.NewGuid():N}{ext}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+
+        using var stream = new FileStream(filePath, FileMode.Create);
+        await file.CopyToAsync(stream);
+
+        coach.PhotoUrl = $"/uploads/coaches/{fileName}";
+        await _db.SaveChangesAsync();
+
+        return new CoachDto(coach.Id, coach.FullName, coach.PhotoUrl, coach.Specialization);
     }
 
     private static TrainingDto MapTraining(Training t) =>

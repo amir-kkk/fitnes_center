@@ -110,3 +110,11 @@ public class CreateCoachDtoValidator : AbstractValidator<CreateCoachDto>
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
     }
 }
+
+public class UpdateCoachDtoValidator : AbstractValidator<UpdateCoachDto>
+{
+    public UpdateCoachDtoValidator()
+    {
+        RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
+    }
+}

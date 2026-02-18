@@ -11,7 +11,7 @@ import { useNotificationStore } from '../../stores/notificationStore';
 import type { Training, Category, Coach, PagedResult } from '../../types';
 
 const emptyForm = {
-  categoryId: 0, coachId: 0, description: '', coachPhotoUrl: '',
+  categoryId: 0, coachId: 0, description: '',
   startTime: '', maxParticipants: 20,
 };
 
@@ -48,7 +48,7 @@ export default function AdminTrainingsPage() {
     setEditId(t.id);
     setForm({
       categoryId: t.categoryId, coachId: t.coachId, description: t.description,
-      coachPhotoUrl: t.coachPhotoUrl || '', startTime: dayjs(t.startTime).format('YYYY-MM-DDTHH:mm'),
+      startTime: dayjs(t.startTime).format('YYYY-MM-DDTHH:mm'),
       maxParticipants: t.maxParticipants,
     });
     setDlgOpen(true);
@@ -57,7 +57,7 @@ export default function AdminTrainingsPage() {
   const handleSave = async () => {
     const payload = {
       ...form,
-      coachPhotoUrl: form.coachPhotoUrl || null,
+      coachPhotoUrl: null,
       startTime: new Date(form.startTime).toISOString(),
     };
     try {
@@ -142,8 +142,6 @@ export default function AdminTrainingsPage() {
               value={form.maxParticipants}
               onChange={(e) => setForm({ ...form, maxParticipants: +e.target.value })} />
           </Stack>
-          <TextField label="URL фото тренера" fullWidth margin="dense" size="small"
-            value={form.coachPhotoUrl} onChange={(e) => setForm({ ...form, coachPhotoUrl: e.target.value })} />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDlgOpen(false)}>Отмена</Button>

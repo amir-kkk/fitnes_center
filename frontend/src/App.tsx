@@ -13,6 +13,7 @@ import ProfilePage from './pages/ProfilePage';
 import ProgressPage from './pages/ProgressPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminCoachesPage from './pages/admin/AdminCoachesPage';
 import AdminMembershipsPage from './pages/admin/AdminMembershipsPage';
 import AdminTrainingsPage from './pages/admin/AdminTrainingsPage';
 import AdminPurchasesPage from './pages/admin/AdminPurchasesPage';
@@ -47,6 +48,7 @@ export default function App() {
       }>
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />
+        <Route path="/admin/coaches" element={<AdminCoachesPage />} />
         <Route path="/admin/memberships" element={<AdminMembershipsPage />} />
         <Route path="/admin/trainings" element={<AdminTrainingsPage />} />
         <Route path="/admin/purchases" element={<AdminPurchasesPage />} />

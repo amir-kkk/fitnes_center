@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   People, CardMembership, FitnessCenter, ShoppingCart,
-  ArrowBack, Dashboard,
+  ArrowBack, Dashboard, SportsKabaddi,
 } from '@mui/icons-material';
 
 const DRAWER_WIDTH = 240;
@@ -13,6 +13,7 @@ const DRAWER_WIDTH = 240;
 const menuItems = [
   { text: 'Обзор', icon: <Dashboard />, path: '/admin' },
   { text: 'Пользователи', icon: <People />, path: '/admin/users' },
+  { text: 'Тренеры', icon: <SportsKabaddi />, path: '/admin/coaches' },
   { text: 'Абонементы', icon: <CardMembership />, path: '/admin/memberships' },
   { text: 'Тренировки', icon: <FitnessCenter />, path: '/admin/trainings' },
   { text: 'Покупки', icon: <ShoppingCart />, path: '/admin/purchases' },

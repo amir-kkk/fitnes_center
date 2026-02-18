@@ -143,13 +143,21 @@ Training (*) ──→ (1) Coach
 | GET | `/api/progress/trackers/{id}/entries` | Записи трекера |
 | POST | `/api/progress/trackers/{id}/entries` | Добавить замер |
 
+### Тренеры
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/api/coaches` | Список тренеров |
+| POST | `/api/coaches` | Создать тренера (Admin) |
+| PUT | `/api/coaches/{id}` | Обновить тренера (Admin) |
+| DELETE | `/api/coaches/{id}` | Удалить тренера (Admin) |
+| POST | `/api/coaches/{id}/photo` | Загрузить фото (multipart/form-data, Admin) |
+
 ### Администрирование
 | Метод | Путь | Описание |
 |-------|------|----------|
 | GET | `/api/admin/users` | Список пользователей |
 | PUT | `/api/admin/users/{id}/role` | Смена роли |
 | GET/POST | `/api/categories` | Категории |
-| GET/POST | `/api/coaches` | Тренеры |
 
 ## Функциональность
 
@@ -164,8 +172,9 @@ Training (*) ──→ (1) Coach
 
 ### Для администратора
 - Управление пользователями (смена ролей)
+- CRUD тренеров (с загрузкой фото из файла)
 - CRUD абонементов
-- CRUD тренировок
+- CRUD тренировок (тренер выбирается из списка, фото берётся от тренера)
 - Просмотр всех покупок
 
 ## Безопасность

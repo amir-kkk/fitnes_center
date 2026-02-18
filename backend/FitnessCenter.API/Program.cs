@@ -90,8 +90,15 @@ using (var scope = app.Services.CreateScope())
     await SeedData.InitializeAsync(db);
 }
 
+// ═══ Каталог для загрузки фото тренеров ═══
+var webRoot = app.Environment.WebRootPath
+    ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+Directory.CreateDirectory(Path.Combine(webRoot, "uploads", "coaches"));
+app.Environment.WebRootPath = webRoot;
+
 // ═══ Pipeline ═══
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseStaticFiles();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors();

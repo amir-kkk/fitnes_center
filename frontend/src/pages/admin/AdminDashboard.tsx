@@ -32,10 +32,10 @@ export default function AdminDashboard() {
   if (loading) return <Box textAlign="center" mt={4}><CircularProgress /></Box>;
 
   const cards = [
-    { label: 'Пользователи', value: stats.users, icon: <People fontSize="large" />, color: '#1565c0' },
-    { label: 'Абонементы', value: stats.memberships, icon: <CardMembership fontSize="large" />, color: '#2e7d32' },
-    { label: 'Тренировки', value: stats.trainings, icon: <FitnessCenter fontSize="large" />, color: '#ff6f00' },
-    { label: 'Покупки', value: stats.purchases, icon: <ShoppingCart fontSize="large" />, color: '#c62828' },
+    { label: 'Пользователи', value: stats.users, icon: <People fontSize="large" />, color: '#2C2C2C' },
+    { label: 'Абонементы', value: stats.memberships, icon: <CardMembership fontSize="large" />, color: '#555555' },
+    { label: 'Тренировки', value: stats.trainings, icon: <FitnessCenter fontSize="large" />, color: '#2C2C2C' },
+    { label: 'Покупки', value: stats.purchases, icon: <ShoppingCart fontSize="large" />, color: '#555555' },
   ];
 
   return (

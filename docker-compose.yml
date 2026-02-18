@@ -34,6 +34,8 @@ services:
       - JwtSettings__Issuer=FitnessCenter
       - JwtSettings__Audience=FitnessCenterClient
       - JwtSettings__ExpireMinutes=120
+    volumes:
+      - uploads:/app/wwwroot/uploads
 
   # ═══ React Frontend (nginx) ═══
   frontend:
@@ -46,3 +48,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:

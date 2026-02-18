@@ -48,6 +48,7 @@ public record CategoryDto(int Id, string Name);
 public record CoachDto(int Id, string FullName, string? PhotoUrl, string? Specialization);
 public record CreateCategoryDto(string Name);
 public record CreateCoachDto(string FullName, string? PhotoUrl, string? Specialization);
+public record UpdateCoachDto(string FullName, string? Specialization);
 
 // ════════════════════════════════════════
 // Покупки и бронирования
