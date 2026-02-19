@@ -1,0 +1,40 @@
+@startuml coach-photo
+title Загрузка фото тренера
+
+actor "Администратор" as C
+participant "Frontend\n(React)" as F
+participant "Backend\n(ASP.NET Core)" as B
+database "PostgreSQL" as DB
+participant "Файловая\nсистема" as FS
+
+C -> F : Выбирает файл фото\nв диалоге тренера
+F -> F : Отображение превью\n(FileReader API)
+
+
+C -> F : Нажимает "Сохранить"
+F -> B : PUT /api/coaches/{id}\n{fullName, specialization}
+B -> DB : Обновление данных тренера
+B --> F : 200 OK
+
+== Загрузка фото ==
+F -> B : POST /api/coaches/{id}/photo\n[multipart/form-data]\nfile: photo.jpg
+activate B
+
+B -> B : Валидация файла\n(размер ≤ 5 МБ, формат: jpg/png/webp)
+
+B -> DB : Получение текущего тренера
+DB --> B : Coach {PhotoUrl: "/uploads/.../old.jpg"}
+
+B -> FS : Удаление старого файла
+B -> FS : Сохранение нового файла\nв wwwroot/uploads/coaches/
+FS --> B : OK
+
+B -> DB : Обновление PhotoUrl
+DB --> B : OK
+
+B --> F : 200 OK {photoUrl: "/uploads/.../new.jpg"}
+deactivate B
+
+F --> C : Фото обновлено
+
+@enduml

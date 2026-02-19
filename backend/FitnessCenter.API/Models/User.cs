@@ -1,0 +1,19 @@
+namespace FitnessCenter.API.Models;
+
+/// <summary>
+/// Пользователь системы (роли: Admin, User)
+/// </summary>
+public class User
+{
+    public Guid Id { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string PasswordHash { get; set; } = string.Empty;
+    public string Role { get; set; } = "User";
+    public string FullName { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Навигационные свойства
+    public List<Purchase> Purchases { get; set; } = new();
+    public List<Booking> Bookings { get; set; } = new();
+    public List<ProgressTracker> ProgressTrackers { get; set; } = new();
+}

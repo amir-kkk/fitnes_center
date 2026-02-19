@@ -1,0 +1,49 @@
+@startuml
+title Диаграмма вариантов использования системы фитнес-центра
+left to right direction
+skinparam actorStyle plain
+
+actor "Гость" as Guest
+actor "Пользователь" as User
+actor "Администратор" as Admin
+
+rectangle "Система фитнес-центра" {
+
+    usecase "Зарегистрироваться" as UC_REGISTER
+    usecase "Просмотреть\nабонементы" as UC_VIEW_MEMB
+    usecase "Просмотреть\nрасписание" as UC_VIEW_SCHED
+
+   
+    usecase "Войти в систему" as UC_LOGIN
+
+    usecase "Оформить\nабонемент" as UC_BUY
+    usecase "Записаться\nна тренировку" as UC_BOOK
+    usecase "Записать\nрезультат тренировки" as UC_progress
+
+    usecase "Управлять\nпользователями" as UC_ADM_USERS
+    usecase "Управлять\nабонементами" as UC_ADM_MEMB
+    usecase "Управлять\nрасписанием\nи тренировками" as UC_ADM_TRAIN
+    
+}
+
+' Гость
+Guest --> UC_LOGIN
+Guest --> UC_VIEW_MEMB
+Guest --> UC_VIEW_SCHED
+Guest --> UC_REGISTER
+
+' Пользователь
+UC_LOGIN <-- User
+ UC_VIEW_MEMB <-- User
+ UC_VIEW_SCHED <-- User
+ UC_BUY <-- User
+ UC_BOOK <-- User
+ UC_progress <-- User
+
+' Администратор
+Admin --> UC_LOGIN
+Admin --> UC_ADM_USERS
+Admin --> UC_ADM_MEMB
+Admin --> UC_ADM_TRAIN
+
+@enduml

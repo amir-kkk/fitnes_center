@@ -1,0 +1,34 @@
+@startuml register
+title Регистрация пользователя
+
+actor "Клиент" as C
+participant "Frontend\n(React)" as F
+participant "Backend\n(ASP.NET Core)" as B
+database "PostgreSQL" as DB
+
+C -> F : Заполняет форму\n(email, пароль, ФИО)
+F -> B : POST /api/auth/register\n{email, password, fullName}
+activate B
+
+B -> DB : Проверка уникальности email
+DB --> B : Email свободен
+
+B -> B : Хеширование пароля (BCrypt)
+
+B -> DB : Сохранение нового пользователя
+DB --> B : OK
+
+B -> B : Генерация JWT-токена
+' note right
+'     Claims: sub, email, role
+'     Алгоритм: HMAC-SHA256
+'     Срок жизни: 120 мин
+' end note
+
+B --> F : 200 OK {token, user}
+deactivate B
+
+F -> F : Сохранение токена\nв localStorage
+F --> C : Редирект на главную
+
+@enduml

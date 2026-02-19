@@ -1,0 +1,42 @@
+@startuml purchase
+title Покупка абонемента (создание + имитация оплаты)
+
+actor "Клиент" as C
+participant "Frontend\n(React)" as F
+participant "Backend\n(ASP.NET Core)" as B
+database "PostgreSQL" as DB
+
+
+
+C -> F : Нажимает "Купить"\nна карточке абонемента
+F -> B : POST /api/purchases\n{membershipId}\n[Authorization: Bearer JWT]
+activate B
+
+B -> DB : Получение абонемента по Id
+DB --> B : Membership {Price: 4500}
+
+B -> B : Фиксация цены\nна момент покупки
+
+B -> DB : Создание записи Purchase\n(Status = Pending)
+DB --> B : Purchase {Id: 42}
+
+B --> F : 200 OK {id: 42, status: "Pending"}
+deactivate B
+
+== Имитация оплаты ==
+
+F -> B : POST /api/purchases/42/pay\n[Authorization: Bearer JWT]
+activate B
+
+B -> DB : Получение покупки по Id
+DB --> B : Purchase {Status: Pending}
+
+B -> DB : Обновление статуса\nSET Status = "Paid"
+DB --> B : OK
+
+B --> F : 200 OK {status: "Paid"}
+deactivate B
+
+F --> C : "Абонемент успешно оплачен!"
+
+@enduml

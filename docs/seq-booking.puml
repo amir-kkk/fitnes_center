@@ -1,0 +1,29 @@
+@startuml booking
+title Запись на тренировку
+
+actor "Клиент" as C
+participant "Frontend\n(React)" as F
+participant "Backend\n(ASP.NET Core)" as B
+database "PostgreSQL" as DB
+
+C -> F : Нажимает "Записаться"\nна карточке тренировки
+F -> B : POST /api/bookings\n{trainingId}\n[Authorization: Bearer JWT]
+activate B
+
+B -> DB : Получение тренировки\nс количеством записей
+DB --> B : Training {MaxParticipants: n}\n
+
+B -> B : Проверка наличия мест\n
+
+B -> DB : Проверка: пользователь\nещё не записан?
+DB --> B : Дубля нет
+
+B -> DB : Создание записи Booking\n(Status = Active)
+DB --> B : Booking {Id: k}
+
+B --> F : 200 OK {id: k, status: "Active"}
+deactivate B
+
+F --> C : "Вы записаны на тренировку!"
+
+@enduml
