@@ -29,12 +29,28 @@ export default function Layout() {
           </Typography>
 
           <Box sx={{ flexGrow: 1, display: 'flex', gap: 0.5 }}>
-            <Button color="inherit" component={RouterLink} to="/memberships"
-              sx={{ borderRadius: 20 }}>Абонементы</Button>
-            <Button color="inherit" component={RouterLink} to="/trainings"
-              sx={{ borderRadius: 20 }}>Расписание</Button>
-            {user && <Button color="inherit" component={RouterLink} to="/progress"
+            {user?.role !== 'Trainer' && (
+              <Button color="inherit" component={RouterLink} to="/memberships"
+                sx={{ borderRadius: 20 }}>Абонементы</Button>
+            )}
+            {user?.role !== 'Trainer' && (
+              <Button color="inherit" component={RouterLink} to="/trainings"
+                sx={{ borderRadius: 20 }}>Расписание</Button>
+            )}
+            {user && (
+              <Button color="inherit" component={RouterLink} to="/personal-workouts"
+                sx={{ borderRadius: 20 }}>
+                Персональные тренировки
+              </Button>
+            )}
+            {user && user.role !== 'Trainer' && <Button color="inherit" component={RouterLink} to="/progress"
               sx={{ borderRadius: 20 }}>Прогресс</Button>}
+            {user?.role === 'Trainer' && (
+              <Button color="inherit" component={RouterLink} to="/trainer/schedule"
+                sx={{ borderRadius: 20 }}>
+                Мое расписание
+              </Button>
+            )}
             {user && <Button color="inherit" component={RouterLink} to="/profile"
               sx={{ borderRadius: 20 }}>Кабинет</Button>}
             {user?.role === 'Admin' && (

@@ -11,7 +11,7 @@ import { useNotificationStore } from '../../stores/notificationStore';
 import type { Training, Category, Coach, PagedResult } from '../../types';
 
 const emptyForm = {
-  categoryId: 0, coachId: 0, description: '',
+  categoryId: 0, trainerId: '', description: '',
   startTime: '', maxParticipants: 20,
 };
 
@@ -21,14 +21,14 @@ export default function AdminTrainingsPage() {
   const [total, setTotal] = useState(0);
   const [pm, setPm] = useState<GridPaginationModel>({ page: 0, pageSize: 10 });
   const [categories, setCategories] = useState<Category[]>([]);
-  const [coaches, setCoaches] = useState<Coach[]>([]);
+  const [trainers, setTrainers] = useState<Coach[]>([]);
   const [dlgOpen, setDlgOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
     api.get<Category[]>('/categories').then(({ data }) => setCategories(data));
-    api.get<Coach[]>('/coaches').then(({ data }) => setCoaches(data));
+    api.get<Coach[]>('/coaches').then(({ data }) => setTrainers(data));
   }, []);
 
   const fetchData = useCallback(async () => {
@@ -47,7 +47,7 @@ export default function AdminTrainingsPage() {
   const openEdit = (t: Training) => {
     setEditId(t.id);
     setForm({
-      categoryId: t.categoryId, coachId: t.coachId, description: t.description,
+      categoryId: t.categoryId, trainerId: t.trainerId, description: t.description,
       startTime: dayjs(t.startTime).format('YYYY-MM-DDTHH:mm'),
       maxParticipants: t.maxParticipants,
     });
@@ -57,7 +57,6 @@ export default function AdminTrainingsPage() {
   const handleSave = async () => {
     const payload = {
       ...form,
-      coachPhotoUrl: null,
       startTime: new Date(form.startTime).toISOString(),
     };
     try {
@@ -82,7 +81,7 @@ export default function AdminTrainingsPage() {
     { field: 'id', headerName: 'ID', width: 60 },
     { field: 'description', headerName: 'Описание', flex: 1 },
     { field: 'categoryName', headerName: 'Категория', width: 120 },
-    { field: 'coachName', headerName: 'Тренер', width: 180 },
+    { field: 'trainerName', headerName: 'Тренер', width: 180 },
     {
       field: 'startTime', headerName: 'Дата/время', width: 160,
       valueFormatter: (params) => dayjs(params.value).format('DD.MM.YYYY HH:mm'),
@@ -128,9 +127,9 @@ export default function AdminTrainingsPage() {
             </FormControl>
             <FormControl fullWidth size="small">
               <InputLabel>Тренер</InputLabel>
-              <Select value={form.coachId} label="Тренер"
-                onChange={(e) => setForm({ ...form, coachId: +e.target.value })}>
-                {coaches.map((c) => <MenuItem key={c.id} value={c.id}>{c.fullName}</MenuItem>)}
+              <Select value={form.trainerId} label="Тренер"
+                onChange={(e) => setForm({ ...form, trainerId: e.target.value })}>
+                {trainers.map((c) => <MenuItem key={c.id} value={c.id}>{c.fullName}</MenuItem>)}
               </Select>
             </FormControl>
           </Stack>
@@ -145,7 +144,10 @@ export default function AdminTrainingsPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDlgOpen(false)}>Отмена</Button>
-          <Button variant="contained" onClick={handleSave}>Сохранить</Button>
+          <Button variant="contained" onClick={handleSave}
+            disabled={!form.description.trim() || !form.trainerId || !form.categoryId || !form.startTime}>
+            Сохранить
+          </Button>
         </DialogActions>
       </Dialog>
     </>

@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   People, CardMembership, FitnessCenter, ShoppingCart,
-  ArrowBack, Dashboard, SportsKabaddi,
+  ArrowBack, Dashboard, SportsKabaddi, EventAvailable,
 } from '@mui/icons-material';
 
 const DRAWER_WIDTH = 240;
@@ -15,7 +15,8 @@ const menuItems = [
   { text: 'Пользователи', icon: <People />, path: '/admin/users' },
   { text: 'Тренеры', icon: <SportsKabaddi />, path: '/admin/coaches' },
   { text: 'Абонементы', icon: <CardMembership />, path: '/admin/memberships' },
-  { text: 'Тренировки', icon: <FitnessCenter />, path: '/admin/trainings' },
+  { text: 'Групповые тренировки', icon: <FitnessCenter />, path: '/admin/trainings' },
+  { text: 'Персональные тренировки', icon: <EventAvailable />, path: '/admin/personal-workouts' },
   { text: 'Покупки', icon: <ShoppingCart />, path: '/admin/purchases' },
 ];
 

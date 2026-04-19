@@ -9,14 +9,18 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MembershipsPage from './pages/MembershipsPage';
 import TrainingsPage from './pages/TrainingsPage';
+import PersonalWorkoutsPage from './pages/PersonalWorkoutsPage';
 import ProfilePage from './pages/ProfilePage';
 import ProgressPage from './pages/ProgressPage';
+import TrainerSchedulePage from './pages/TrainerSchedulePage';
+import TrainerClientProgressPage from './pages/TrainerClientProgressPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminCoachesPage from './pages/admin/AdminCoachesPage';
 import AdminMembershipsPage from './pages/admin/AdminMembershipsPage';
 import AdminTrainingsPage from './pages/admin/AdminTrainingsPage';
 import AdminPurchasesPage from './pages/admin/AdminPurchasesPage';
+import AdminPersonalWorkoutsPage from './pages/admin/AdminPersonalWorkoutsPage';
 
 export default function App() {
   const loadUser = useAuthStore((s) => s.loadUser);
@@ -34,11 +38,20 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/memberships" element={<MembershipsPage />} />
         <Route path="/trainings" element={<TrainingsPage />} />
+        <Route path="/personal-workouts" element={
+          <ProtectedRoute><PersonalWorkoutsPage /></ProtectedRoute>
+        } />
         <Route path="/profile" element={
           <ProtectedRoute><ProfilePage /></ProtectedRoute>
         } />
         <Route path="/progress" element={
-          <ProtectedRoute><ProgressPage /></ProtectedRoute>
+          <ProtectedRoute disallowedRoles={['Trainer']}><ProgressPage /></ProtectedRoute>
+        } />
+        <Route path="/trainer/schedule" element={
+          <ProtectedRoute requiredRole="Trainer"><TrainerSchedulePage /></ProtectedRoute>
+        } />
+        <Route path="/trainer/client/:id" element={
+          <ProtectedRoute requiredRole="Trainer"><TrainerClientProgressPage /></ProtectedRoute>
         } />
       </Route>
 
@@ -52,6 +65,7 @@ export default function App() {
         <Route path="/admin/memberships" element={<AdminMembershipsPage />} />
         <Route path="/admin/trainings" element={<AdminTrainingsPage />} />
         <Route path="/admin/purchases" element={<AdminPurchasesPage />} />
+        <Route path="/admin/personal-workouts" element={<AdminPersonalWorkoutsPage />} />
       </Route>
     </Routes>
   );

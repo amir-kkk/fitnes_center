@@ -3,12 +3,14 @@ import {
   Grid, Card, CardContent, CardActions, Typography, Button, Box,
   FormControl, InputLabel, Select, MenuItem, TextField, Chip, Stack,
   CircularProgress, LinearProgress,
+  Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material';
 import { AccessTime, Person, Group } from '@mui/icons-material';
 import dayjs from 'dayjs';
 import api from '../api/client';
 import { useAuthStore } from '../stores/authStore';
 import { useNotificationStore } from '../stores/notificationStore';
+import { createGoogleCalendarLink } from '../utils/calendar';
 import type { Training, Category, Coach, PagedResult } from '../types';
 
 export default function TrainingsPage() {
@@ -16,15 +18,21 @@ export default function TrainingsPage() {
   const notify = useNotificationStore((s) => s.showNotification);
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [coaches, setCoaches] = useState<Coach[]>([]);
+  const [trainers, setTrainers] = useState<Coach[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryId, setCategoryId] = useState<number | ''>('');
-  const [coachId, setCoachId] = useState<number | ''>('');
+  const [trainerId, setTrainerId] = useState<string>('');
   const [date, setDate] = useState('');
+  const [calendarEvent, setCalendarEvent] = useState<{
+    title: string;
+    start: Date;
+    end: Date;
+    details: string;
+  } | null>(null);
 
   useEffect(() => {
     api.get<Category[]>('/categories').then(({ data }) => setCategories(data));
-    api.get<Coach[]>('/coaches').then(({ data }) => setCoaches(data));
+    api.get<Coach[]>('/coaches').then(({ data }) => setTrainers(data));
   }, []);
 
   const fetchTrainings = async () => {
@@ -32,7 +40,7 @@ export default function TrainingsPage() {
     try {
       const params: any = { page: 1, pageSize: 50 };
       if (categoryId) params.categoryId = categoryId;
-      if (coachId) params.coachId = coachId;
+      if (trainerId) params.trainerId = trainerId;
       if (date) params.date = date;
       const { data } = await api.get<PagedResult<Training>>('/trainings', { params });
       setTrainings(data.items);
@@ -40,17 +48,44 @@ export default function TrainingsPage() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchTrainings(); }, [categoryId, coachId, date]);
+  useEffect(() => { fetchTrainings(); }, [categoryId, trainerId, date]);
 
   const handleBook = async (trainingId: number) => {
     try {
       await api.post('/bookings', { trainingId });
       notify('Вы записаны на тренировку!', 'success');
+      const training = trainings.find((t) => t.id === trainingId);
+      if (training) {
+        const start = new Date(training.startTime);
+        const end = dayjs(training.startTime).add(1, 'hour').toDate();
+        setCalendarEvent({
+          title: `Групповая тренировка: ${training.description}`,
+          start,
+          end,
+          details: `Тренер: ${training.trainerName}. Категория: ${training.categoryName}.`,
+        });
+      }
       fetchTrainings();
     } catch (err: any) {
       notify(err.response?.data?.detail || 'Ошибка записи', 'error');
     }
   };
+
+  const handleAddToCalendar = () => {
+    if (!calendarEvent) return;
+    const link = createGoogleCalendarLink(calendarEvent);
+    window.open(link, '_blank', 'noopener,noreferrer');
+    setCalendarEvent(null);
+  };
+
+  if (user?.role === 'Trainer') {
+    return (
+      <Box textAlign="center" mt={8}>
+        <Typography variant="h5" gutterBottom>Раздел недоступен для тренеров</Typography>
+        <Typography color="text.secondary">Запись на групповые тренировки для тренеров отключена.</Typography>
+      </Box>
+    );
+  }
 
   return (
     <>
@@ -67,9 +102,9 @@ export default function TrainingsPage() {
         </FormControl>
         <FormControl sx={{ minWidth: 200 }} size="small">
           <InputLabel>Тренер</InputLabel>
-          <Select value={coachId} label="Тренер" onChange={(e) => setCoachId(e.target.value as number | '')}>
+          <Select value={trainerId} label="Тренер" onChange={(e) => setTrainerId(e.target.value as string)}>
             <MenuItem value="">Все</MenuItem>
-            {coaches.map((c) => <MenuItem key={c.id} value={c.id}>{c.fullName}</MenuItem>)}
+            {trainers.map((c) => <MenuItem key={c.id} value={c.id}>{c.fullName}</MenuItem>)}
           </Select>
         </FormControl>
         <TextField type="date" size="small" label="Дата" InputLabelProps={{ shrink: true }}
@@ -96,7 +131,7 @@ export default function TrainingsPage() {
                       </Box>
                       <Box display="flex" alignItems="center" gap={0.5}>
                         <Person fontSize="small" color="action" />
-                        <Typography variant="body2">{t.coachName}</Typography>
+                        <Typography variant="body2">{t.trainerName}</Typography>
                       </Box>
                       <Box display="flex" alignItems="center" gap={0.5}>
                         <Group fontSize="small" color="action" />
@@ -129,6 +164,19 @@ export default function TrainingsPage() {
           )}
         </Grid>
       )}
+
+      <Dialog open={!!calendarEvent} onClose={() => setCalendarEvent(null)}>
+        <DialogTitle>Отметить занятие в календаре?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            Добавить событие в Google Calendar.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCalendarEvent(null)}>Нет</Button>
+          <Button variant="contained" onClick={handleAddToCalendar}>Да</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

@@ -41,6 +41,15 @@ export default function MembershipsPage() {
 
   if (loading) return <Box textAlign="center" mt={8}><CircularProgress /></Box>;
 
+  if (user?.role === 'Trainer') {
+    return (
+      <Box textAlign="center" mt={8}>
+        <Typography variant="h5" gutterBottom>Раздел недоступен для тренеров</Typography>
+        <Typography color="text.secondary">Для тренеров отключены абонементы.</Typography>
+      </Box>
+    );
+  }
+
   return (
     <>
       <Typography variant="h4" mb={3}>Абонементы</Typography>

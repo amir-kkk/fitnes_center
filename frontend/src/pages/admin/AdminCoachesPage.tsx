@@ -2,20 +2,20 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import {
   Typography, Box, Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, Stack, Avatar, IconButton,
+  DialogActions, TextField, Stack, Avatar, MenuItem,
 } from '@mui/material';
-import { Add, Edit, Delete, PhotoCamera } from '@mui/icons-material';
+import { Delete, Edit, PhotoCamera } from '@mui/icons-material';
 import api from '../../api/client';
 import { useNotificationStore } from '../../stores/notificationStore';
 import type { Coach } from '../../types';
 
-const emptyForm = { fullName: '', specialization: '' };
+const emptyForm = { fullName: '', trainerRank: 1 };
 
 export default function AdminCoachesPage() {
   const notify = useNotificationStore((s) => s.showNotification);
   const [rows, setRows] = useState<Coach[]>([]);
   const [dlgOpen, setDlgOpen] = useState(false);
-  const [editId, setEditId] = useState<number | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -32,17 +32,9 @@ export default function AdminCoachesPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const openCreate = () => {
-    setEditId(null);
-    setForm(emptyForm);
-    setPhotoFile(null);
-    setPhotoPreview(null);
-    setDlgOpen(true);
-  };
-
   const openEdit = (c: Coach) => {
     setEditId(c.id);
-    setForm({ fullName: c.fullName, specialization: c.specialization || '' });
+    setForm({ fullName: c.fullName, trainerRank: c.trainerRank });
     setPhotoFile(null);
     setPhotoPreview(c.photoUrl);
     setDlgOpen(true);
@@ -64,33 +56,23 @@ export default function AdminCoachesPage() {
   };
 
   const handleSave = async () => {
+    if (!editId) return;
     try {
-      let coachId = editId;
-
-      if (editId) {
-        await api.put(`/coaches/${editId}`, {
-          fullName: form.fullName,
-          specialization: form.specialization || null,
-        });
-      } else {
-        const { data } = await api.post('/coaches', {
-          fullName: form.fullName,
-          photoUrl: null,
-          specialization: form.specialization || null,
-        });
-        coachId = data.id;
-      }
+      await api.put(`/coaches/${editId}`, {
+        fullName: form.fullName,
+        trainerRank: form.trainerRank,
+      });
 
       // Загрузка фото отдельным запросом
-      if (photoFile && coachId) {
+      if (photoFile) {
         const formData = new FormData();
         formData.append('file', photoFile);
-        await api.post(`/coaches/${coachId}/photo`, formData, {
+        await api.post(`/coaches/${editId}/photo`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
 
-      notify(editId ? 'Тренер обновлён' : 'Тренер создан', 'success');
+      notify('Тренер обновлён', 'success');
       setDlgOpen(false);
       fetchData();
     } catch (err: any) {
@@ -98,19 +80,18 @@ export default function AdminCoachesPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Удалить тренера?')) return;
+  const handleDelete = async (id: string) => {
+    if (!confirm('Уволить тренера? Это удалит его слоты и тренировки без активных записей.')) return;
     try {
       await api.delete(`/coaches/${id}`);
-      notify('Тренер удалён', 'info');
+      notify('Тренер удален', 'success');
       fetchData();
     } catch (err: any) {
-      notify(err.response?.data?.detail || 'Ошибка удаления', 'error');
+      notify(err.response?.data?.detail || 'Ошибка удаления тренера', 'error');
     }
   };
 
   const columns: GridColDef[] = [
-    { field: 'id', headerName: 'ID', width: 60 },
     {
       field: 'photoUrl', headerName: 'Фото', width: 80, sortable: false,
       renderCell: (params) => (
@@ -120,15 +101,18 @@ export default function AdminCoachesPage() {
       ),
     },
     { field: 'fullName', headerName: 'ФИО', flex: 1 },
-    { field: 'specialization', headerName: 'Специализация', flex: 1 },
+    { field: 'email', headerName: 'Email', flex: 1 },
+    { field: 'trainerRank', headerName: 'Ранг', width: 80, type: 'number' },
     {
-      field: 'actions', headerName: 'Действия', width: 180, sortable: false,
+      field: 'actions', headerName: 'Действия', width: 220, sortable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Button size="small" startIcon={<Edit />} onClick={() => openEdit(params.row)}
             sx={{ borderRadius: 16 }}>Ред.</Button>
           <Button size="small" color="error" startIcon={<Delete />}
-            onClick={() => handleDelete(params.row.id)} sx={{ borderRadius: 16 }}>Уд.</Button>
+            onClick={() => handleDelete(params.row.id)} sx={{ borderRadius: 16 }}>
+            Уволить
+          </Button>
         </Stack>
       ),
     },
@@ -138,8 +122,11 @@ export default function AdminCoachesPage() {
     <>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">Тренеры</Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={openCreate}>Добавить тренера</Button>
       </Box>
+      <Typography variant="body2" color="text.secondary" mb={2}>
+        Управление тренерами выполняется через роль пользователя `Trainer`.
+        Здесь администратор задает фото и ранг (1-5), влияющий на стоимость персональной тренировки.
+      </Typography>
 
       <Box sx={{ height: 500 }}>
         <DataGrid rows={rows} columns={columns} pageSizeOptions={[10, 25]} />
@@ -147,7 +134,7 @@ export default function AdminCoachesPage() {
 
       {/* Диалог создания/редактирования */}
       <Dialog open={dlgOpen} onClose={() => setDlgOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editId ? 'Редактировать' : 'Новый'} тренер</DialogTitle>
+        <DialogTitle>Редактировать тренера</DialogTitle>
         <DialogContent>
           {/* Превью и загрузка фото */}
           <Box display="flex" flexDirection="column" alignItems="center" mb={2} mt={1}>
@@ -167,10 +154,18 @@ export default function AdminCoachesPage() {
 
           <TextField label="ФИО тренера" fullWidth margin="dense"
             value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
-          <TextField label="Специализация" fullWidth margin="dense"
-            value={form.specialization}
-            onChange={(e) => setForm({ ...form, specialization: e.target.value })}
-            placeholder="Например: Йога, Пилатес" />
+          <TextField
+            select
+            label="Ранг"
+            fullWidth
+            margin="dense"
+            value={form.trainerRank}
+            onChange={(e) => setForm({ ...form, trainerRank: Number(e.target.value) })}
+          >
+            {[1, 2, 3, 4, 5].map((rank) => (
+              <MenuItem key={rank} value={rank}>{rank}</MenuItem>
+            ))}
+          </TextField>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDlgOpen(false)}>Отмена</Button>

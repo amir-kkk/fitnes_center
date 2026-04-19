@@ -5,6 +5,8 @@ export interface User {
   email: string;
   fullName: string;
   role: string;
+  photoUrl: string | null;
+  trainerRank: number | null;
   createdAt: string;
 }
 
@@ -30,10 +32,10 @@ export interface Training {
   maxParticipants: number;
   currentParticipants: number;
   categoryName: string;
-  coachName: string;
-  coachPhotoUrl: string | null;
+  trainerName: string;
+  trainerPhotoUrl: string | null;
   categoryId: number;
-  coachId: number;
+  trainerId: string;
 }
 
 export interface Category {
@@ -42,10 +44,11 @@ export interface Category {
 }
 
 export interface Coach {
-  id: number;
+  id: string;
   fullName: string;
+  email: string;
   photoUrl: string | null;
-  specialization: string | null;
+  trainerRank: number;
 }
 
 export interface Purchase {
@@ -64,7 +67,7 @@ export interface Booking {
   trainingId: number;
   trainingDescription: string;
   trainingStartTime: string;
-  coachName: string;
+  trainerName: string;
   userId: string;
   userEmail: string;
   status: string;
@@ -84,6 +87,33 @@ export interface ProgressEntry {
   id: number;
   value: number;
   dateRecorded: string;
+}
+
+export interface TrainerListItem {
+  id: string;
+  fullName: string;
+  email: string;
+  photoUrl: string | null;
+  trainerRank: number;
+}
+
+export interface PersonalWorkoutSlot {
+  id: number;
+  trainerId: string;
+  trainerName: string;
+  clientId: string | null;
+  clientName: string | null;
+  dateTime: string;
+  price: number;
+  isBooked: boolean;
+}
+
+export interface TrainerUpdateProgressPayload {
+  clientId: string;
+  weightKg?: number;
+  chestCm?: number;
+  waistCm?: number;
+  hipsCm?: number;
 }
 
 export interface PagedResult<T> {
