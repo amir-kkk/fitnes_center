@@ -1,8 +1,7 @@
 namespace FitnessCenter.API.Middleware;
 
-/// <summary>
 /// Глобальный обработчик исключений — возвращает ProblemDetails
-/// </summary>
+
 public class ExceptionMiddleware
 {
     private readonly RequestDelegate _next;

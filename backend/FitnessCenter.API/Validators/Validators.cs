@@ -55,7 +55,7 @@ public class CreateTrainingDtoValidator : AbstractValidator<CreateTrainingDto>
     public CreateTrainingDtoValidator()
     {
         RuleFor(x => x.CategoryId).GreaterThan(0);
-        RuleFor(x => x.CoachId).GreaterThan(0);
+        RuleFor(x => x.TrainerId).NotEmpty();
         RuleFor(x => x.Description).NotEmpty();
         RuleFor(x => x.MaxParticipants).GreaterThan(0).WithMessage("Количество участников должно быть положительным");
         RuleFor(x => x.StartTime).GreaterThan(DateTime.UtcNow).WithMessage("Дата должна быть в будущем");
@@ -67,7 +67,7 @@ public class UpdateTrainingDtoValidator : AbstractValidator<UpdateTrainingDto>
     public UpdateTrainingDtoValidator()
     {
         RuleFor(x => x.CategoryId).GreaterThan(0);
-        RuleFor(x => x.CoachId).GreaterThan(0);
+        RuleFor(x => x.TrainerId).NotEmpty();
         RuleFor(x => x.Description).NotEmpty();
         RuleFor(x => x.MaxParticipants).GreaterThan(0);
     }
@@ -93,6 +93,28 @@ public class CreateEntryDtoValidator : AbstractValidator<CreateEntryDto>
     }
 }
 
+public class TrainerUpdateProgressDtoValidator : AbstractValidator<TrainerUpdateProgressDto>
+{
+    public TrainerUpdateProgressDtoValidator()
+    {
+        RuleFor(x => x.ClientId).NotEmpty();
+        RuleFor(x => x.WeightKg).GreaterThanOrEqualTo(0).When(x => x.WeightKg.HasValue);
+        RuleFor(x => x.ChestCm).GreaterThanOrEqualTo(0).When(x => x.ChestCm.HasValue);
+        RuleFor(x => x.WaistCm).GreaterThanOrEqualTo(0).When(x => x.WaistCm.HasValue);
+        RuleFor(x => x.HipsCm).GreaterThanOrEqualTo(0).When(x => x.HipsCm.HasValue);
+    }
+}
+
+public class AiTrainerChatRequestDtoValidator : AbstractValidator<AiTrainerChatRequestDto>
+{
+    public AiTrainerChatRequestDtoValidator()
+    {
+        RuleFor(x => x.Message)
+            .NotEmpty()
+            .MaximumLength(2000);
+    }
+}
+
 // ─── Категории / Тренеры ───
 
 public class CreateCategoryDtoValidator : AbstractValidator<CreateCategoryDto>
@@ -103,18 +125,11 @@ public class CreateCategoryDtoValidator : AbstractValidator<CreateCategoryDto>
     }
 }
 
-public class CreateCoachDtoValidator : AbstractValidator<CreateCoachDto>
-{
-    public CreateCoachDtoValidator()
-    {
-        RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
-    }
-}
-
 public class UpdateCoachDtoValidator : AbstractValidator<UpdateCoachDto>
 {
     public UpdateCoachDtoValidator()
     {
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.TrainerRank).InclusiveBetween(1, 5);
     }
 }

@@ -1,49 +1,29 @@
 @startuml booking
-title Запись на тренировку (с проверкой мест и дублей)
+title Запись на тренировку
 
 actor "Клиент" as C
 participant "Frontend\n(React)" as F
-participant "BookingsController" as BC
-participant "BookingService" as BS
+participant "Backend\n(ASP.NET Core)" as B
 database "PostgreSQL" as DB
 
 C -> F : Нажимает "Записаться"\nна карточке тренировки
-F -> BC : POST /api/bookings\n{trainingId}\n[Authorization: Bearer JWT]
-activate BC
+F -> B : POST /api/bookings\n{trainingId}\n[Authorization: Bearer JWT]
+activate B
 
-BC -> BS : CreateAsync(userId, dto)
-activate BS
+B -> DB : Получение тренировки\nс количеством записей
+DB --> B : Training {MaxParticipants: n}\n
 
-BS -> DB : SELECT Training + Bookings\nWHERE Training.Id = ?\nINCLUDE Bookings
-DB --> BS : Training {MaxParticipants: 15}\n+ Bookings (12 активных)
+B -> B : Проверка наличия мест\n
 
-note right of BS
-    Подсчёт: activeCount = Bookings
-    .Count(Status == Active)
-end note
+B -> DB : Проверка: пользователь\nещё не записан?
+DB --> B : Дубля нет
 
-alt activeCount >= MaxParticipants
-    BS --> BC : InvalidOperationException
-    BC --> F : 400 {detail: "Все места заняты"}
-    F --> C : "Мест нет"
-else Места есть
-    BS -> DB : SELECT COUNT(*) FROM Bookings\nWHERE TrainingId = ? AND UserId = ?\nAND Status = Active
-    DB --> BS : count
+B -> DB : Создание записи Booking\n(Status = Active)
+DB --> B : Booking {Id: k}
 
-    alt count > 0 (уже записан)
-        BS --> BC : InvalidOperationException
-        BC --> F : 400 {detail: "Вы уже записаны"}
-        F --> C : Сообщение об ошибке
-    else Дубля нет
-        BS -> DB : INSERT INTO Bookings\n(TrainingId, UserId, Status = "Active")
-        DB --> BS : Booking {Id: 77}
+B --> F : 200 OK {id: k, status: "Active"}
+deactivate B
 
-        BS --> BC : BookingDto
-        deactivate BS
-        BC --> F : 200 OK {id: 77, status: "Active"}
-        deactivate BC
-        F --> C : "Вы записаны на тренировку!"
-    end
-end
+F --> C : "Вы записаны на тренировку!"
 
 @enduml

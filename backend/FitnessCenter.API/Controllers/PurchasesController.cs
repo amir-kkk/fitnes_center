@@ -8,7 +8,7 @@ namespace FitnessCenter.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Roles = "User,Admin")]
 public class PurchasesController : ControllerBase
 {
     private readonly PurchaseService _svc;

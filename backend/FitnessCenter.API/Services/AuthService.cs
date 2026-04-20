@@ -62,6 +62,36 @@ public class AuthService
         return MapUser(user);
     }
 
+    public async Task<UserDto> UploadUserPhotoAsync(Guid userId, IFormFile file, string webRootPath)
+    {
+        var user = await _db.Users.FindAsync(userId)
+            ?? throw new KeyNotFoundException("Пользователь не найден");
+
+        if (user.Role == "Trainer")
+            throw new InvalidOperationException("Фото тренера задается администратором");
+
+        var uploadsDir = Path.Combine(webRootPath, "uploads", "users");
+        Directory.CreateDirectory(uploadsDir);
+
+        if (!string.IsNullOrEmpty(user.PhotoUrl) && user.PhotoUrl.StartsWith("/uploads/"))
+        {
+            var oldPath = Path.Combine(webRootPath, user.PhotoUrl.TrimStart('/'));
+            if (File.Exists(oldPath)) File.Delete(oldPath);
+        }
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var fileName = $"{user.Id}_{Guid.NewGuid():N}{ext}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+
+        using var stream = new FileStream(filePath, FileMode.Create);
+        await file.CopyToAsync(stream);
+
+        user.PhotoUrl = $"/uploads/users/{fileName}";
+        await _db.SaveChangesAsync();
+
+        return MapUser(user);
+    }
+
     /// <summary>
     /// Генерация JWT-токена с claims: sub, email, role
     /// </summary>
@@ -90,5 +120,5 @@ public class AuthService
     }
 
     private static UserDto MapUser(User u) =>
-        new(u.Id, u.Email, u.FullName, u.Role, u.CreatedAt);
+        new(u.Id, u.Email, u.FullName, u.Role, u.PhotoUrl, u.TrainerRank, u.CreatedAt);
 }

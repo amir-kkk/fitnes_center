@@ -15,10 +15,10 @@ public class TrainingsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<PagedResult<TrainingDto>>> GetAll(
         [FromQuery] int page = 1, [FromQuery] int pageSize = 10,
-        [FromQuery] int? categoryId = null, [FromQuery] int? coachId = null,
+        [FromQuery] int? categoryId = null, [FromQuery] Guid? trainerId = null,
         [FromQuery] DateTime? date = null, [FromQuery] string? search = null)
     {
-        var result = await _svc.GetAllAsync(page, pageSize, categoryId, coachId, date, search);
+        var result = await _svc.GetAllAsync(page, pageSize, categoryId, trainerId, date, search);
         return Ok(result);
     }
 

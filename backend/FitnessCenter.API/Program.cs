@@ -41,6 +41,9 @@ builder.Services.AddScoped<TrainingService>();
 builder.Services.AddScoped<PurchaseService>();
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<ProgressService>();
+builder.Services.AddScoped<PersonalWorkoutService>();
+builder.Services.AddScoped<MembershipAccessService>();
+builder.Services.AddScoped<AiTrainerService>();
 
 // ═══ FluentValidation ═══
 builder.Services.AddFluentValidationAutoValidation();
@@ -90,10 +93,11 @@ using (var scope = app.Services.CreateScope())
     await SeedData.InitializeAsync(db);
 }
 
-// ═══ Каталог для загрузки фото тренеров ═══
+// ═══ Каталоги для загрузки аватаров ═══
 var webRoot = app.Environment.WebRootPath
     ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
-Directory.CreateDirectory(Path.Combine(webRoot, "uploads", "coaches"));
+Directory.CreateDirectory(Path.Combine(webRoot, "uploads", "users"));
+Directory.CreateDirectory(Path.Combine(webRoot, "uploads", "trainers"));
 app.Environment.WebRootPath = webRoot;
 
 // ═══ Pipeline ═══

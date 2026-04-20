@@ -11,7 +11,13 @@ namespace FitnessCenter.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly AuthService _auth;
-    public AuthController(AuthService auth) => _auth = auth;
+    private readonly IWebHostEnvironment _env;
+
+    public AuthController(AuthService auth, IWebHostEnvironment env)
+    {
+        _auth = auth;
+        _env = env;
+    }
 
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register(RegisterDto dto)
@@ -27,9 +33,9 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>
+
     /// Текущий пользователь по JWT-токену
-    /// </summary>
+
     [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<UserDto>> Me()
@@ -38,5 +44,29 @@ public class AuthController : ControllerBase
             ?? User.FindFirstValue("sub")!);
         var user = await _auth.GetByIdAsync(userId);
         return Ok(user);
+    }
+
+    [Authorize]
+    [HttpPost("me/photo")]
+    public async Task<ActionResult<UserDto>> UploadMyPhoto(IFormFile file)
+    {
+        if (file.Length == 0)
+            return BadRequest(new { detail = "Файл пуст" });
+        if (file.Length > 5 * 1024 * 1024)
+            return BadRequest(new { detail = "Файл слишком большой (макс. 5 МБ)" });
+
+        var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowed.Contains(ext))
+            return BadRequest(new { detail = "Допустимые форматы: jpg, png, webp" });
+
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub")!);
+
+        var webRootPath = _env.WebRootPath
+            ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+
+        var result = await _auth.UploadUserPhotoAsync(userId, file, webRootPath);
+        return Ok(result);
     }
 }

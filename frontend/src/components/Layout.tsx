@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import { FitnessCenter, Person } from '@mui/icons-material';
 import { useAuthStore } from '../stores/authStore';
+import AiTrainerWidget from './AiTrainerWidget';
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
@@ -103,6 +104,8 @@ export default function Layout() {
           &copy; {new Date().getFullYear()} FitnessCenter. Учебный проект.
         </Typography>
       </Box>
+
+      <AiTrainerWidget />
     </Box>
   );
 }

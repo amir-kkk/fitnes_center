@@ -3,59 +3,40 @@ title Покупка абонемента (создание + имитация �
 
 actor "Клиент" as C
 participant "Frontend\n(React)" as F
-participant "PurchasesController" as PC
-participant "PurchaseService" as PS
+participant "Backend\n(ASP.NET Core)" as B
 database "PostgreSQL" as DB
 
-== Шаг 1: Создание покупки ==
+
 
 C -> F : Нажимает "Купить"\nна карточке абонемента
-F -> PC : POST /api/purchases\n{membershipId}\n[Authorization: Bearer JWT]
-activate PC
+F -> B : POST /api/purchases\n{membershipId}\n[Authorization: Bearer JWT]
+activate B
 
-PC -> PS : CreateAsync(userId, dto)
-activate PS
+B -> DB : Получение абонемента по Id
+DB --> B : Membership {Price: 4500}
 
-PS -> DB : SELECT * FROM Memberships\nWHERE Id = ?
-DB --> PS : Membership {Price: 4500}
+B -> B : Фиксация цены\nна момент покупки
 
-note right of PS
-    Фиксируем цену на момент покупки
-    (PriceAtPurchase = Membership.Price)
-end note
+B -> DB : Создание записи Purchase\n(Status = Pending)
+DB --> B : Purchase {Id: 42}
 
-PS -> DB : INSERT INTO Purchases\n(UserId, MembershipId, PriceAtPurchase,\nStatus = "Pending")
-DB --> PS : Purchase {Id: 42}
+B --> F : 200 OK {id: 42, status: "Pending"}
+deactivate B
 
-PS --> PC : PurchaseDto {id: 42, status: "Pending"}
-deactivate PS
-PC --> F : 200 OK {id: 42, status: "Pending"}
-deactivate PC
+== Имитация оплаты ==
 
-== Шаг 2: Имитация оплаты ==
+F -> B : POST /api/purchases/42/pay\n[Authorization: Bearer JWT]
+activate B
 
-F -> PC : POST /api/purchases/42/pay\n[Authorization: Bearer JWT]
-activate PC
+B -> DB : Получение покупки по Id
+DB --> B : Purchase {Status: Pending}
 
-PC -> PS : PayAsync(id: 42, userId)
-activate PS
+B -> DB : Обновление статуса\nSET Status = "Paid"
+DB --> B : OK
 
-PS -> DB : SELECT * FROM Purchases\nWHERE Id = 42 AND UserId = ?
-DB --> PS : Purchase {Status: "Pending"}
+B --> F : 200 OK {status: "Paid"}
+deactivate B
 
-alt Уже оплачено
-    PS --> PC : InvalidOperationException
-    PC --> F : 400 {detail: "Покупка уже оплачена"}
-    F --> C : Сообщение об ошибке
-else Статус Pending
-    PS -> DB : UPDATE Purchases\nSET Status = "Paid"\nWHERE Id = 42
-    DB --> PS : OK
-
-    PS --> PC : PurchaseDto {id: 42, status: "Paid"}
-    deactivate PS
-    PC --> F : 200 OK {status: "Paid"}
-    deactivate PC
-    F --> C : "Абонемент успешно оплачен!"
-end
+F --> C : "Абонемент успешно оплачен!"
 
 @enduml

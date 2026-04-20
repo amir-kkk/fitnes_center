@@ -3,45 +3,32 @@ title Регистрация пользователя
 
 actor "Клиент" as C
 participant "Frontend\n(React)" as F
-participant "AuthController" as AC
-participant "AuthService" as AS
+participant "Backend\n(ASP.NET Core)" as B
 database "PostgreSQL" as DB
 
 C -> F : Заполняет форму\n(email, пароль, ФИО)
-F -> AC : POST /api/auth/register\n{email, password, fullName}
-activate AC
+F -> B : POST /api/auth/register\n{email, password, fullName}
+activate B
 
-AC -> AS : RegisterAsync(dto)
-activate AS
+B -> DB : Проверка уникальности email
+DB --> B : Email свободен
 
-AS -> DB : SELECT * FROM Users\nWHERE Email = ?
-DB --> AS : Результат
+B -> B : Хеширование пароля (BCrypt)
 
-alt Email уже занят
-    AS --> AC : InvalidOperationException
-    AC --> F : 400 Bad Request\n{detail: "Email уже существует"}
-    F --> C : Сообщение об ошибке
-else Email свободен
-    AS -> AS : BCrypt.HashPassword(password)
-    note right: Хеширование пароля\nалгоритмом BCrypt
+B -> DB : Сохранение нового пользователя
+DB --> B : OK
 
-    AS -> DB : INSERT INTO Users\n(Id, Email, PasswordHash, Role, FullName)
-    DB --> AS : OK
+B -> B : Генерация JWT-токена
+' note right
+'     Claims: sub, email, role
+'     Алгоритм: HMAC-SHA256
+'     Срок жизни: 120 мин
+' end note
 
-    AS -> AS : GenerateToken(user)
-    note right
-        Генерация JWT:
-        Claims: sub, email, role, fullName
-        Подпись: HMAC-SHA256
-        Срок: 120 мин
-    end note
+B --> F : 200 OK {token, user}
+deactivate B
 
-    AS --> AC : AuthResponse {token, user}
-    deactivate AS
-    AC --> F : 200 OK {token, user}
-    deactivate AC
-    F -> F : localStorage.setItem("token", token)
-    F --> C : Редирект на главную
-end
+F -> F : Сохранение токена\nв localStorage
+F --> C : Редирект на главную
 
 @enduml

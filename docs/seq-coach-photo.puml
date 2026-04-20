@@ -1,61 +1,36 @@
 @startuml coach-photo
-title Загрузка фото тренера (из локального файла)
+title Загрузка фото тренера
 
 actor "Администратор" as C
 participant "Frontend\n(React)" as F
-participant "CoachesController" as CC
-participant "TrainingService" as TS
+participant "Backend\n(ASP.NET Core)" as B
 database "PostgreSQL" as DB
 participant "Файловая\nсистема" as FS
 
-C -> F : Выбирает файл фото\nв диалоге редактирования тренера
-F -> F : Превью через FileReader API
+C -> F : Выбирает файл фото\nв диалоге тренера
+F -> F : Отображение превью\n(FileReader API)
+
 
 C -> F : Нажимает "Сохранить"
 
-== Сохранение данных тренера ==
-F -> CC : PUT /api/coaches/{id}\n{fullName, specialization}\n[Authorization: Bearer JWT]
-CC -> TS : UpdateCoachAsync(id, dto)
-TS -> DB : UPDATE Coaches SET ...
-CC --> F : 200 OK
+F -> B : POST /api/coaches/{id}/photo\n[multipart/form-data]\nfile: photo.jpg
+activate B
 
-== Загрузка фото ==
-F -> CC : POST /api/coaches/{id}/photo\n[Content-Type: multipart/form-data]\nfile: photo.jpg
-activate CC
+B -> B : Валидация файла\n(размер ≤ 5 МБ, формат: jpg/png/webp)
 
-CC -> CC : Валидация файла
-note right
-    Проверки:
-    • Размер ≤ 5 МБ
-    • Формат: jpg, png, webp
-end note
+B -> DB : Получение текущего тренера
+DB --> B : Coach {PhotoUrl: "/uploads/.../old.jpg"}
 
-alt Файл невалиден
-    CC --> F : 400 {detail: "Файл слишком большой / неверный формат"}
-    F --> C : Сообщение об ошибке
-else Файл валиден
-    CC -> TS : UploadCoachPhotoAsync(id, file, webRootPath)
-    activate TS
+B -> FS : Удаление старого файла
+B -> FS : Сохранение нового файла\nв wwwroot/uploads/coaches/
+FS --> B : OK
 
-    TS -> DB : SELECT * FROM Coaches\nWHERE Id = ?
-    DB --> TS : Coach {PhotoUrl: "/uploads/coaches/old.jpg"}
+B -> DB : Обновление PhotoUrl
+DB --> B : OK
 
-    TS -> FS : File.Delete(old.jpg)
-    note right: Удаление старого фото\n(если существует)
+B --> F : 200 OK {photoUrl: "/uploads/.../new.jpg"}
+deactivate B
 
-    TS -> FS : FileStream.Create(\n"wwwroot/uploads/coaches/{id}_{guid}.jpg")
-    TS -> FS : file.CopyToAsync(stream)
-    FS --> TS : OK
-
-    TS -> DB : UPDATE Coaches\nSET PhotoUrl = "/uploads/coaches/{id}_{guid}.jpg"
-    DB --> TS : OK
-
-    TS --> CC : CoachDto {photoUrl: "..."}
-    deactivate TS
-    CC --> F : 200 OK {photoUrl: "..."}
-    deactivate CC
-    F -> F : Обновление превью
-    F --> C : Фото обновлено
-end
+F --> C : Фото обновлено
 
 @enduml

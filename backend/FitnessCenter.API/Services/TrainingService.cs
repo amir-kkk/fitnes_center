@@ -7,7 +7,8 @@ using Microsoft.EntityFrameworkCore;
 namespace FitnessCenter.API.Services;
 
 /// <summary>
-/// Управление тренировками, категориями, тренерами
+/// Управление тренировками и категориями.
+/// Тренеры берутся из Users с ролью Trainer.
 /// </summary>
 public class TrainingService
 {
@@ -17,16 +18,16 @@ public class TrainingService
     // ─── Тренировки ───
 
     public async Task<PagedResult<TrainingDto>> GetAllAsync(
-        int page, int pageSize, int? categoryId, int? coachId, DateTime? date, string? search)
+        int page, int pageSize, int? categoryId, Guid? trainerId, DateTime? date, string? search)
     {
         var query = _db.Trainings
             .Include(t => t.Category)
-            .Include(t => t.Coach)
+            .Include(t => t.Trainer)
             .Include(t => t.Bookings)
             .AsQueryable();
 
         if (categoryId.HasValue) query = query.Where(t => t.CategoryId == categoryId.Value);
-        if (coachId.HasValue) query = query.Where(t => t.CoachId == coachId.Value);
+        if (trainerId.HasValue) query = query.Where(t => t.TrainerId == trainerId.Value);
         if (date.HasValue) query = query.Where(t => t.StartTime.Date == date.Value.Date);
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(t => t.Description.ToLower().Contains(search.ToLower()));
@@ -44,7 +45,7 @@ public class TrainingService
     public async Task<TrainingDto> GetByIdAsync(int id)
     {
         var t = await _db.Trainings
-            .Include(x => x.Category).Include(x => x.Coach).Include(x => x.Bookings)
+            .Include(x => x.Category).Include(x => x.Trainer).Include(x => x.Bookings)
             .FirstOrDefaultAsync(x => x.Id == id)
             ?? throw new KeyNotFoundException("Тренировка не найдена");
         return MapTraining(t);
@@ -52,12 +53,13 @@ public class TrainingService
 
     public async Task<TrainingDto> CreateAsync(CreateTrainingDto dto)
     {
+        await EnsureTrainerAsync(dto.TrainerId);
+
         var entity = new Training
         {
             CategoryId = dto.CategoryId,
-            CoachId = dto.CoachId,
+            TrainerId = dto.TrainerId,
             Description = dto.Description,
-            CoachPhotoUrl = dto.CoachPhotoUrl,
             StartTime = dto.StartTime,
             MaxParticipants = dto.MaxParticipants
         };
@@ -69,13 +71,14 @@ public class TrainingService
 
     public async Task<TrainingDto> UpdateAsync(int id, UpdateTrainingDto dto)
     {
+        await EnsureTrainerAsync(dto.TrainerId);
+
         var entity = await _db.Trainings.FindAsync(id)
             ?? throw new KeyNotFoundException("Тренировка не найдена");
 
         entity.CategoryId = dto.CategoryId;
-        entity.CoachId = dto.CoachId;
+        entity.TrainerId = dto.TrainerId;
         entity.Description = dto.Description;
-        entity.CoachPhotoUrl = dto.CoachPhotoUrl;
         entity.StartTime = dto.StartTime;
         entity.MaxParticipants = dto.MaxParticipants;
 
@@ -104,50 +107,74 @@ public class TrainingService
         return new CategoryDto(entity.Id, entity.Name);
     }
 
-    // ─── Тренеры ───
-
+    // ─── Тренеры (Users с ролью Trainer) ───
     public async Task<List<CoachDto>> GetCoachesAsync() =>
-        await _db.Coaches
-            .Select(c => new CoachDto(c.Id, c.FullName, c.PhotoUrl, c.Specialization))
+        await _db.Users
+            .Where(u => u.Role == "Trainer")
+            .OrderBy(u => u.FullName)
+            .Select(u => new CoachDto(
+                u.Id,
+                u.FullName,
+                u.Email,
+                u.PhotoUrl,
+                u.TrainerRank ?? 1))
             .ToListAsync();
 
-    public async Task<CoachDto> CreateCoachAsync(CreateCoachDto dto)
+    public async Task<CoachDto> UpdateCoachAsync(Guid id, UpdateCoachDto dto)
     {
-        var entity = new Coach { FullName = dto.FullName, PhotoUrl = dto.PhotoUrl, Specialization = dto.Specialization };
-        _db.Coaches.Add(entity);
-        await _db.SaveChangesAsync();
-        return new CoachDto(entity.Id, entity.FullName, entity.PhotoUrl, entity.Specialization);
-    }
-
-    public async Task<CoachDto> UpdateCoachAsync(int id, UpdateCoachDto dto)
-    {
-        var coach = await _db.Coaches.FindAsync(id)
+        var coach = await _db.Users.FindAsync(id)
             ?? throw new KeyNotFoundException("Тренер не найден");
+
+        if (coach.Role != "Trainer")
+            throw new InvalidOperationException("Пользователь не является тренером");
+
         coach.FullName = dto.FullName;
-        coach.Specialization = dto.Specialization;
+        coach.TrainerRank = Math.Clamp(dto.TrainerRank, 1, 5);
         await _db.SaveChangesAsync();
-        return new CoachDto(coach.Id, coach.FullName, coach.PhotoUrl, coach.Specialization);
+        return new CoachDto(coach.Id, coach.FullName, coach.Email, coach.PhotoUrl, coach.TrainerRank ?? 1);
     }
 
-    public async Task DeleteCoachAsync(int id)
+    public async Task DeleteCoachAsync(Guid id)
     {
-        var coach = await _db.Coaches.Include(c => c.Trainings).FirstOrDefaultAsync(c => c.Id == id)
+        var coach = await _db.Users.FirstOrDefaultAsync(u => u.Id == id)
             ?? throw new KeyNotFoundException("Тренер не найден");
-        if (coach.Trainings.Any())
-            throw new InvalidOperationException("Нельзя удалить тренера с назначенными тренировками");
-        _db.Coaches.Remove(coach);
+
+        if (coach.Role != "Trainer")
+            throw new InvalidOperationException("Пользователь не является тренером");
+
+        var hasActiveGroupBookings = await _db.Trainings
+            .Where(t => t.TrainerId == id)
+            .SelectMany(t => t.Bookings)
+            .AnyAsync(b => b.Status == BookingStatus.Active);
+        if (hasActiveGroupBookings)
+            throw new InvalidOperationException("Нельзя удалить тренера с активными групповыми записями");
+
+        var hasActivePersonalBookings = await _db.PersonalWorkouts
+            .AnyAsync(w => w.TrainerId == id && w.IsBooked);
+        if (hasActivePersonalBookings)
+            throw new InvalidOperationException("Нельзя удалить тренера с активными персональными записями");
+
+        var trainings = await _db.Trainings.Where(t => t.TrainerId == id).ToListAsync();
+        var personalSlots = await _db.PersonalWorkouts.Where(w => w.TrainerId == id).ToListAsync();
+
+        _db.Trainings.RemoveRange(trainings);
+        _db.PersonalWorkouts.RemoveRange(personalSlots);
+        _db.Users.Remove(coach);
         await _db.SaveChangesAsync();
     }
 
     /// <summary>
-    /// Загрузка фото тренера из файла — сохраняет в wwwroot/uploads/coaches/
+    /// Загрузка фото тренера из файла — сохраняет в wwwroot/uploads/trainers/
     /// </summary>
-    public async Task<CoachDto> UploadCoachPhotoAsync(int id, IFormFile file, string webRootPath)
+    public async Task<CoachDto> UploadCoachPhotoAsync(Guid id, IFormFile file, string webRootPath)
     {
-        var coach = await _db.Coaches.FindAsync(id)
+        var coach = await _db.Users.FindAsync(id)
             ?? throw new KeyNotFoundException("Тренер не найден");
 
-        var uploadsDir = Path.Combine(webRootPath, "uploads", "coaches");
+        if (coach.Role != "Trainer")
+            throw new InvalidOperationException("Пользователь не является тренером");
+
+        var uploadsDir = Path.Combine(webRootPath, "uploads", "trainers");
         Directory.CreateDirectory(uploadsDir);
 
         // Удаляем старое фото
@@ -164,16 +191,23 @@ public class TrainingService
         using var stream = new FileStream(filePath, FileMode.Create);
         await file.CopyToAsync(stream);
 
-        coach.PhotoUrl = $"/uploads/coaches/{fileName}";
+        coach.PhotoUrl = $"/uploads/trainers/{fileName}";
         await _db.SaveChangesAsync();
 
-        return new CoachDto(coach.Id, coach.FullName, coach.PhotoUrl, coach.Specialization);
+        return new CoachDto(coach.Id, coach.FullName, coach.Email, coach.PhotoUrl, coach.TrainerRank ?? 1);
+    }
+
+    private async Task EnsureTrainerAsync(Guid trainerId)
+    {
+        var exists = await _db.Users.AnyAsync(u => u.Id == trainerId && u.Role == "Trainer");
+        if (!exists)
+            throw new InvalidOperationException("Выбранный пользователь не является тренером");
     }
 
     private static TrainingDto MapTraining(Training t) =>
         new(t.Id, t.Description, t.StartTime, t.MaxParticipants,
             t.Bookings.Count(b => b.Status == BookingStatus.Active),
-            t.Category.Name, t.Coach.FullName,
-            t.CoachPhotoUrl ?? t.Coach.PhotoUrl,
-            t.CategoryId, t.CoachId);
+            t.Category.Name, t.Trainer.FullName,
+            t.Trainer.PhotoUrl,
+            t.CategoryId, t.TrainerId);
 }

@@ -1,79 +1,46 @@
-@startuml usecase
-title Диаграмма вариантов использования (Use Case)
-
+@startuml
+title Диаграмма вариантов использования системы фитнес-центра
 left to right direction
-skinparam actorStyle awesome
+skinparam actorStyle plain
 
-actor "Гость" as Guest
 actor "Пользователь" as User
 actor "Администратор" as Admin
 
-rectangle "FitnessCenter" {
 
-    package "Аутентификация" {
-        usecase "Регистрация" as UC_REG
-        usecase "Авторизация" as UC_LOGIN
-    }
 
-    package "Каталог" {
-        usecase "Просмотр абонементов\n(фильтр по цене)" as UC_VIEW_MEMB
-        usecase "Просмотр расписания\n(фильтр: категория, тренер, дата)" as UC_VIEW_TRAIN
-    }
+    usecase "Зарегистрироваться" as UC_REGISTER
+    usecase "Просмотреть\nабонементы" as UC_VIEW_MEMB
+    usecase "Просмотреть\nрасписание" as UC_VIEW_SCHED
 
-    package "Покупки и записи" {
-        usecase "Покупка абонемента" as UC_BUY
-        usecase "Имитация оплаты" as UC_PAY
-        usecase "Запись на тренировку" as UC_BOOK
-        usecase "Отмена записи" as UC_CANCEL
-    }
 
-    package "Личный кабинет" {
-        usecase "Просмотр покупок\nи записей" as UC_PROFILE
-        usecase "Создание трекера\nпрогресса" as UC_TRACKER
-        usecase "Добавление замера" as UC_ENTRY
-        usecase "Просмотр динамики\n(% изменения)" as UC_DYNAMICS
-    }
 
-    package "Администрирование" {
-        usecase "Управление\nпользователями" as UC_ADM_USERS
-        usecase "CRUD абонементов" as UC_ADM_MEMB
-        usecase "CRUD тренировок" as UC_ADM_TRAIN
-        usecase "CRUD тренеров\n(загрузка фото)" as UC_ADM_COACH
-        usecase "Просмотр всех\nпокупок" as UC_ADM_PURCH
-        usecase "CRUD категорий" as UC_ADM_CAT
-    }
-}
+    usecase "Оформить\nабонемент" as UC_BUY
+    usecase "Записаться\nна тренировку" as UC_BOOK
+    usecase "Записать\nрезультат тренировки" as UC_progress
+    usecase "Войти в систему" as UC_LOGIN
 
-' ═══ Гость ═══
-Guest --> UC_REG
-Guest --> UC_LOGIN
-Guest --> UC_VIEW_MEMB
-Guest --> UC_VIEW_TRAIN
+    usecase "Управлять\nпользователями" as UC_ADM_USERS
+    usecase "Управлять\nабонементами" as UC_ADM_MEMB
+    usecase "Управлять\nрасписанием\nи тренировками" as UC_ADM_TRAIN
+       
+    
 
-' ═══ Пользователь (наследует возможности гостя) ═══
-User --|> Guest
-User --> UC_BUY
-User --> UC_BOOK
-User --> UC_CANCEL
-User --> UC_PROFILE
-User --> UC_TRACKER
-User --> UC_ENTRY
-User --> UC_DYNAMICS
 
-' ═══ Администратор (наследует возможности пользователя) ═══
-Admin --|> User
+
+
+' Пользователь
+UC_LOGIN <-- User
+ UC_VIEW_MEMB <-- User
+ UC_VIEW_SCHED <-- User
+ UC_BUY <-- User
+ UC_BOOK <-- User
+ UC_progress <-- User
+ UC_REGISTER <-- User
+
+' Администратор
+Admin --> UC_LOGIN
 Admin --> UC_ADM_USERS
 Admin --> UC_ADM_MEMB
 Admin --> UC_ADM_TRAIN
-Admin --> UC_ADM_COACH
-Admin --> UC_ADM_PURCH
-Admin --> UC_ADM_CAT
-
-' ═══ Связи между UC ═══
-UC_BUY ..> UC_PAY : <<include>>
-UC_TRACKER ..> UC_ENTRY : <<include>>
-UC_ENTRY ..> UC_DYNAMICS : <<include>>
-UC_BUY ..> UC_LOGIN : <<include>>
-UC_BOOK ..> UC_LOGIN : <<include>>
 
 @enduml

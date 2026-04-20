@@ -16,7 +16,7 @@ public class BookingService
     public async Task<List<BookingDto>> GetByUserAsync(Guid userId)
     {
         return await _db.Bookings
-            .Include(b => b.Training).ThenInclude(t => t.Coach)
+            .Include(b => b.Training).ThenInclude(t => t.Trainer)
             .Include(b => b.User)
             .Where(b => b.UserId == userId)
             .OrderByDescending(b => b.Training.StartTime)
@@ -27,7 +27,7 @@ public class BookingService
     public async Task<PagedResult<BookingDto>> GetAllAsync(int page, int pageSize)
     {
         var query = _db.Bookings
-            .Include(b => b.Training).ThenInclude(t => t.Coach)
+            .Include(b => b.Training).ThenInclude(t => t.Trainer)
             .Include(b => b.User);
 
         var total = await query.CountAsync();
@@ -42,7 +42,9 @@ public class BookingService
 
     public async Task<BookingDto> CreateAsync(Guid userId, CreateBookingDto dto)
     {
-        var training = await _db.Trainings.Include(t => t.Bookings).Include(t => t.Coach)
+        await EnsurePaidMembershipAsync(userId);
+
+        var training = await _db.Trainings.Include(t => t.Bookings).Include(t => t.Trainer)
             .FirstOrDefaultAsync(t => t.Id == dto.TrainingId)
             ?? throw new KeyNotFoundException("Тренировка не найдена");
 
@@ -84,7 +86,7 @@ public class BookingService
     private async Task<BookingDto> GetByIdInternalAsync(int id)
     {
         var b = await _db.Bookings
-            .Include(x => x.Training).ThenInclude(t => t.Coach)
+            .Include(x => x.Training).ThenInclude(t => t.Trainer)
             .Include(x => x.User)
             .FirstAsync(x => x.Id == id);
         return Map(b);
@@ -92,6 +94,15 @@ public class BookingService
 
     private static BookingDto Map(Booking b) =>
         new(b.Id, b.TrainingId, b.Training.Description,
-            b.Training.StartTime, b.Training.Coach.FullName,
+            b.Training.StartTime, b.Training.Trainer.FullName,
             b.UserId, b.User.Email, b.Status.ToString());
+
+    private async Task EnsurePaidMembershipAsync(Guid userId)
+    {
+        var hasPaidMembership = await _db.Purchases
+            .AnyAsync(p => p.UserId == userId && p.Status == PurchaseStatus.Paid);
+
+        if (!hasPaidMembership)
+            throw new InvalidOperationException("Запись доступна только после покупки и оплаты абонемента");
+    }
 }

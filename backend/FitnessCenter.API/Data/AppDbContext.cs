@@ -12,12 +12,14 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Category> Categories => Set<Category>();
-    public DbSet<Coach> Coaches => Set<Coach>();
     public DbSet<Membership> Memberships => Set<Membership>();
     public DbSet<MembershipOption> MembershipOptions => Set<MembershipOption>();
     public DbSet<Training> Trainings => Set<Training>();
     public DbSet<Purchase> Purchases => Set<Purchase>();
     public DbSet<Booking> Bookings => Set<Booking>();
+    public DbSet<PersonalWorkout> PersonalWorkouts => Set<PersonalWorkout>();
+    public DbSet<AiTrainerUsage> AiTrainerUsages => Set<AiTrainerUsage>();
+    public DbSet<AiTrainerMessage> AiTrainerMessages => Set<AiTrainerMessage>();
     public DbSet<ProgressTracker> ProgressTrackers => Set<ProgressTracker>();
     public DbSet<ProgressEntry> ProgressEntries => Set<ProgressEntry>();
 
@@ -28,6 +30,7 @@ public class AppDbContext : DbContext
         {
             e.HasIndex(u => u.Email).IsUnique();
             e.Property(u => u.Role).HasMaxLength(20);
+            e.Property(u => u.PhotoUrl).HasMaxLength(500);
         });
 
         // ─── Membership ───
@@ -50,8 +53,12 @@ public class AppDbContext : DbContext
         {
             e.HasIndex(t => t.StartTime);
             e.HasIndex(t => t.CategoryId);
+            e.HasIndex(t => t.TrainerId);
             e.HasOne(t => t.Category).WithMany(c => c.Trainings).HasForeignKey(t => t.CategoryId);
-            e.HasOne(t => t.Coach).WithMany(c => c.Trainings).HasForeignKey(t => t.CoachId);
+            e.HasOne(t => t.Trainer)
+                .WithMany(u => u.TrainerTrainings)
+                .HasForeignKey(t => t.TrainerId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // ─── Purchase ───
@@ -70,6 +77,42 @@ public class AppDbContext : DbContext
                 .HasFilter("\"Status\" = 0");
             e.HasOne(b => b.Training).WithMany(t => t.Bookings).HasForeignKey(b => b.TrainingId);
             e.HasOne(b => b.User).WithMany(u => u.Bookings).HasForeignKey(b => b.UserId);
+        });
+
+        // ─── PersonalWorkout ───
+        mb.Entity<PersonalWorkout>(e =>
+        {
+            e.HasIndex(pw => new { pw.TrainerId, pw.DateTime }).IsUnique();
+            e.Property(pw => pw.Price).HasColumnType("decimal(10,2)");
+            e.HasOne(pw => pw.Trainer)
+                .WithMany(u => u.TrainerPersonalWorkouts)
+                .HasForeignKey(pw => pw.TrainerId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(pw => pw.Client)
+                .WithMany(u => u.ClientPersonalWorkouts)
+                .HasForeignKey(pw => pw.ClientId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ─── AI Trainer usage limits ───
+        mb.Entity<AiTrainerUsage>(e =>
+        {
+            e.Property(x => x.UsageDate).HasColumnType("date");
+            e.HasIndex(x => new { x.UserId, x.UsageDate }).IsUnique();
+            e.HasOne(x => x.User)
+                .WithMany(u => u.AiTrainerUsages)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ─── AI Trainer successful messages ───
+        mb.Entity<AiTrainerMessage>(e =>
+        {
+            e.HasIndex(x => new { x.UserId, x.CreatedAt });
+            e.HasOne(x => x.User)
+                .WithMany(u => u.AiTrainerMessages)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ─── Progress ───

@@ -122,3 +122,20 @@ export interface PagedResult<T> {
   page: number;
   pageSize: number;
 }
+
+export interface AiChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface AiTrainerStatus {
+  hasActiveMembership: boolean;
+  remainingMessages: number;
+  canUseChat: boolean;
+  membershipExpiresAt: string | null;
+}
+
+export interface AiTrainerChatResponse {
+  reply: string;
+  remainingMessages: number;
+}

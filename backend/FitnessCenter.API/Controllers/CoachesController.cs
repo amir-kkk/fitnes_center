@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace FitnessCenter.API.Controllers;
 
 /// <summary>
-/// Полный CRUD тренеров + загрузка фото из локального файла
+/// Управление тренерами на базе User.Role = Trainer:
+/// просмотр, обновление ранга/имени, загрузка фото.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -28,16 +29,8 @@ public class CoachesController : ControllerBase
     }
 
     [Authorize(Roles = "Admin")]
-    [HttpPost]
-    public async Task<ActionResult<CoachDto>> Create(CreateCoachDto dto)
-    {
-        var result = await _svc.CreateCoachAsync(dto);
-        return Ok(result);
-    }
-
-    [Authorize(Roles = "Admin")]
     [HttpPut("{id}")]
-    public async Task<ActionResult<CoachDto>> Update(int id, UpdateCoachDto dto)
+    public async Task<ActionResult<CoachDto>> Update(Guid id, UpdateCoachDto dto)
     {
         var result = await _svc.UpdateCoachAsync(id, dto);
         return Ok(result);
@@ -45,7 +38,7 @@ public class CoachesController : ControllerBase
 
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         await _svc.DeleteCoachAsync(id);
         return NoContent();
@@ -57,7 +50,7 @@ public class CoachesController : ControllerBase
     /// </summary>
     [Authorize(Roles = "Admin")]
     [HttpPost("{id}/photo")]
-    public async Task<ActionResult<CoachDto>> UploadPhoto(int id, IFormFile file)
+    public async Task<ActionResult<CoachDto>> UploadPhoto(Guid id, IFormFile file)
     {
         if (file.Length == 0)
             return BadRequest(new { detail = "Файл пуст" });

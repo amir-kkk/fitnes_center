@@ -1,21 +1,21 @@
 namespace FitnessCenter.API.DTOs;
 
-// ════════════════════════════════════════
 // Общий контейнер для постраничной выдачи
-// ════════════════════════════════════════
+
 public record PagedResult<T>(List<T> Items, int TotalCount, int Page, int PageSize);
 
-// ════════════════════════════════════════
+
 // Аутентификация
-// ════════════════════════════════════════
+
 public record RegisterDto(string Email, string Password, string FullName);
 public record LoginDto(string Email, string Password);
 public record AuthResponse(string Token, UserDto User);
-public record UserDto(Guid Id, string Email, string FullName, string Role, DateTime CreatedAt);
+public record UserDto(
+    Guid Id, string Email, string FullName, string Role,
+    string? PhotoUrl, int? TrainerRank, DateTime CreatedAt);
 
-// ════════════════════════════════════════
 // Абонементы
-// ════════════════════════════════════════
+
 public record MembershipDto(
     int Id, string Name, string Description, decimal Price,
     int DurationDays, DateTime CreatedAt, List<string> Options);
@@ -28,31 +28,29 @@ public record UpdateMembershipDto(
     string Name, string Description, decimal Price,
     int DurationDays, List<string>? Options);
 
-// ════════════════════════════════════════
+
 // Тренировки, категории, тренеры
-// ════════════════════════════════════════
+
 public record TrainingDto(
     int Id, string Description, DateTime StartTime, int MaxParticipants,
-    int CurrentParticipants, string CategoryName, string CoachName,
-    string? CoachPhotoUrl, int CategoryId, int CoachId);
+    int CurrentParticipants, string CategoryName, string TrainerName,
+    string? TrainerPhotoUrl, int CategoryId, Guid TrainerId);
 
 public record CreateTrainingDto(
-    int CategoryId, int CoachId, string Description,
-    string? CoachPhotoUrl, DateTime StartTime, int MaxParticipants);
+    int CategoryId, Guid TrainerId, string Description,
+    DateTime StartTime, int MaxParticipants);
 
 public record UpdateTrainingDto(
-    int CategoryId, int CoachId, string Description,
-    string? CoachPhotoUrl, DateTime StartTime, int MaxParticipants);
+    int CategoryId, Guid TrainerId, string Description,
+    DateTime StartTime, int MaxParticipants);
 
 public record CategoryDto(int Id, string Name);
-public record CoachDto(int Id, string FullName, string? PhotoUrl, string? Specialization);
+public record CoachDto(Guid Id, string FullName, string Email, string? PhotoUrl, int TrainerRank);
 public record CreateCategoryDto(string Name);
-public record CreateCoachDto(string FullName, string? PhotoUrl, string? Specialization);
-public record UpdateCoachDto(string FullName, string? Specialization);
+public record UpdateCoachDto(string FullName, int TrainerRank);
 
-// ════════════════════════════════════════
 // Покупки и бронирования
-// ════════════════════════════════════════
+
 public record PurchaseDto(
     int Id, Guid UserId, string UserEmail, int MembershipId,
     string MembershipName, decimal PriceAtPurchase, string Status, DateTime CreatedAt);
@@ -61,14 +59,25 @@ public record CreatePurchaseDto(int MembershipId);
 
 public record BookingDto(
     int Id, int TrainingId, string TrainingDescription,
-    DateTime TrainingStartTime, string CoachName,
+    DateTime TrainingStartTime, string TrainerName,
     Guid UserId, string UserEmail, string Status);
 
 public record CreateBookingDto(int TrainingId);
 
-// ════════════════════════════════════════
+
+// Персональные тренировки
+
+public record TrainerListItemDto(Guid Id, string FullName, string Email, string? PhotoUrl, int TrainerRank);
+public record PersonalWorkoutSlotDto(
+    int Id, Guid TrainerId, string TrainerName, Guid? ClientId, string? ClientName,
+    DateTime DateTime, decimal Price, bool IsBooked);
+public record CreatePersonalWorkoutSlotDto(DateTime DateTime);
+public record TrainerUpdateProgressDto(
+    Guid ClientId, double? WeightKg, double? ChestCm, double? WaistCm, double? HipsCm);
+
+
 // Прогресс
-// ════════════════════════════════════════
+
 public record ProgressTrackerDto(
     int Id, string Title, double GoalValue, string Unit,
     DateTime CreatedAt, double? LastValue, double? ChangePercent);
@@ -76,3 +85,10 @@ public record ProgressTrackerDto(
 public record CreateTrackerDto(string Title, double GoalValue, string Unit);
 public record ProgressEntryDto(int Id, double Value, DateTime DateRecorded);
 public record CreateEntryDto(double Value);
+
+// AI Trainer
+
+public record AiChatMessageDto(string Role, string Content);
+public record AiTrainerChatRequestDto(string Message, List<AiChatMessageDto>? History);
+public record AiTrainerChatResponseDto(string Reply, int RemainingMessages);
+public record AiTrainerStatusDto(bool HasActiveMembership, int RemainingMessages, bool CanUseChat, DateTime? MembershipExpiresAt);
