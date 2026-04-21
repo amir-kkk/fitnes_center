@@ -1,0 +1,226 @@
+<mxfile host="Electron" agent="FitnessCenter">
+  <diagram name="Концептуальная ER-диаграмма" id="conceptual_er">
+    <mxGraphModel dx="3674" dy="1213" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="E_User" parent="1" style="rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="&lt;i&gt;Пользователь&lt;/i&gt;" vertex="1">
+          <mxGeometry height="70" width="160" x="630" y="315" as="geometry" />
+        </mxCell>
+        <mxCell id="E_Membership" parent="1" style="rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="&lt;i&gt;Абонемент&lt;/i&gt;" vertex="1">
+          <mxGeometry height="70" width="160" x="-160" y="315" as="geometry" />
+        </mxCell>
+        <mxCell id="E_Purchase" parent="1" style="rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="&lt;i&gt;Покупка&lt;/i&gt;" vertex="1">
+          <mxGeometry height="70" width="160" x="220" y="315" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-13" edge="1" parent="1" source="E_Training" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="vHZkYSbnjGY460X2LnDK-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="E_Training" parent="1" style="rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" value="&lt;i&gt;Групповая тренировка&lt;/i&gt;" vertex="1">
+          <mxGeometry height="70" width="180" x="1050" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="E_Booking" parent="1" style="rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" value="&lt;i&gt;Запись на\nгрупповую тренировку&lt;/i&gt;" vertex="1">
+          <mxGeometry height="70" width="180" x="1050" y="315" as="geometry" />
+        </mxCell>
+        <mxCell id="E_PersonalWorkout" parent="1" style="rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" value="&lt;i&gt;Персональная тренировка&lt;/i&gt;" vertex="1">
+          <mxGeometry height="70" width="200" x="900" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="E_ProgressTracker" parent="1" style="rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" value="Показатель прогресса" vertex="1">
+          <mxGeometry height="70" width="180" x="220" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="E_ProgressEntry" parent="1" style="rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" value="&lt;i&gt;Замер прогресса&lt;/i&gt;" vertex="1">
+          <mxGeometry height="70" width="180" x="220" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="E_AiTrainerMessage" parent="1" style="rectangle;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" value="&lt;i&gt;Лог AI-сообщений&lt;/i&gt;" vertex="1">
+          <mxGeometry height="70" width="180" x="620" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="R_UserPurchase" edge="1" parent="1" source="E_User" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;fontSize=11;endArrow=open;endFill=0;" target="vHZkYSbnjGY460X2LnDK-5" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="490" y="345" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_UserPurchase_lbl1" connectable="0" parent="R_UserPurchase" style="resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.8" as="geometry">
+            <mxPoint x="-14" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_UserPurchase_lbl2" connectable="0" parent="R_UserPurchase" style="resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontStyle=1;" value="M" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint x="-176" y="-5" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_MembershipPurchase" edge="1" parent="1" source="E_Membership" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;endArrow=open;endFill=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="vHZkYSbnjGY460X2LnDK-2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="R_MembershipPurchase_lbl1" connectable="0" parent="R_MembershipPurchase" style="resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.8" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_MembershipPurchase_lbl2" connectable="0" parent="R_MembershipPurchase" style="resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontStyle=1;" value="M" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint x="-2" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_UserBooking" edge="1" parent="1" source="E_User" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;endArrow=open;endFill=0;exitX=1.002;exitY=0.439;exitDx=0;exitDy=0;exitPerimeter=0;" target="E_Booking" value="записывается">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="789" y="346" />
+              <mxPoint x="789" y="350" />
+              <mxPoint x="790" y="350" />
+              <mxPoint x="790" y="346" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_UserBooking_lbl1" connectable="0" parent="R_UserBooking" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.8" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_UserBooking_lbl2" connectable="0" parent="R_UserBooking" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="M" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_TrainingBooking" edge="1" parent="1" source="vHZkYSbnjGY460X2LnDK-12" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;endArrow=open;endFill=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="E_Booking" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="R_TrainingBooking_lbl1" connectable="0" parent="R_TrainingBooking" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.8" as="geometry">
+            <mxPoint x="-90" y="-119" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_TrainingBooking_lbl2" connectable="0" parent="R_TrainingBooking" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="M" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint x="8" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_TrainerTraining" edge="1" parent="1" source="E_User" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;endArrow=open;endFill=0;dashed=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="vHZkYSbnjGY460X2LnDK-8" value="">
+          <mxGeometry relative="1" x="0.1852" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="700" y="215" />
+            </Array>
+            <mxPoint x="840" y="250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_TrainerTraining_lbl1" connectable="0" parent="R_TrainerTraining" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.8" as="geometry">
+            <mxPoint x="10" y="13" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_TrainerTraining_lbl2" connectable="0" parent="R_TrainerTraining" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="M" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint x="183" y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_ClientPersonal" edge="1" parent="1" source="E_User" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;endArrow=open;endFill=0;dashed=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.661;exitY=1.013;exitDx=0;exitDy=0;exitPerimeter=0;" target="vHZkYSbnjGY460X2LnDK-10" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="736" y="420" />
+              <mxPoint x="1000" y="420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_ClientPersonal_lbl1" connectable="0" parent="R_ClientPersonal" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.8" as="geometry">
+            <mxPoint y="-20" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_ClientPersonal_lbl2" connectable="0" parent="R_ClientPersonal" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="0..M" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint y="156" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_UserProgress" edge="1" parent="1" source="E_User" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;endArrow=open;endFill=0;exitX=0.217;exitY=1.005;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="vHZkYSbnjGY460X2LnDK-14" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="665" y="515" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_UserProgress_lbl1" connectable="0" parent="R_UserProgress" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.8" as="geometry">
+            <mxPoint x="15" y="-8" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_UserProgress_lbl2" connectable="0" parent="R_UserProgress" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="M" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint x="-168" y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_TrackerEntry" edge="1" parent="1" source="E_ProgressTracker" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;endArrow=open;endFill=0;" target="vHZkYSbnjGY460X2LnDK-16" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="R_TrackerEntry_lbl1" connectable="0" parent="R_TrackerEntry" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.8" as="geometry">
+            <mxPoint x="10" y="4" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_TrackerEntry_lbl2" connectable="0" parent="R_TrackerEntry" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="M" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint x="10" y="116" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_UserAi" edge="1" parent="1" source="E_User" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;endArrow=open;endFill=0;" target="vHZkYSbnjGY460X2LnDK-18" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="R_UserAi_lbl1" connectable="0" parent="R_UserAi" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="1" vertex="1">
+          <mxGeometry relative="1" x="-0.8" as="geometry">
+            <mxPoint x="10" y="-2" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="R_UserAi_lbl2" connectable="0" parent="R_UserAi" style="resizable=0;html=1;fontSize=12;fontStyle=1;" value="M" vertex="1">
+          <mxGeometry relative="1" x="0.8" as="geometry">
+            <mxPoint x="10" y="138" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-3" edge="1" parent="1" source="vHZkYSbnjGY460X2LnDK-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="E_Purchase" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-2" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 11px; text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;входит в&lt;/span&gt;" vertex="1">
+          <mxGeometry height="80" width="100" x="79.99999999999999" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-6" edge="1" parent="1" source="vHZkYSbnjGY460X2LnDK-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="E_Purchase">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-5" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 11px; text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;Совершает&amp;nbsp;&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;font-size: 11px; text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;(Client)&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="100" x="470" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-9" edge="1" parent="1" source="vHZkYSbnjGY460X2LnDK-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="E_Training">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-8" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 11px; text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;Ведет (Trainer)&lt;/span&gt;" vertex="1">
+          <mxGeometry height="80" width="100" x="870" y="175" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-11" edge="1" parent="1" source="vHZkYSbnjGY460X2LnDK-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="E_PersonalWorkout">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-10" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 11px; text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;Бронирует&amp;nbsp;&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;font-size: 11px; text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;(Client)&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="100" x="950" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-12" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 11px; text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;Имеет&lt;/span&gt;" vertex="1">
+          <mxGeometry height="80" width="100" x="1280" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-15" edge="1" parent="1" source="vHZkYSbnjGY460X2LnDK-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="E_ProgressTracker">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-14" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 11px; text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;Отслеживает&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;font-size: 11px; text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;&amp;nbsp;(Client, trainer)&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="100" x="470" y="475" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-17" edge="1" parent="1" source="vHZkYSbnjGY460X2LnDK-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="E_ProgressEntry" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-16" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 11px; text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;Содержит&lt;/span&gt;" vertex="1">
+          <mxGeometry height="80" width="100" x="260" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-19" edge="1" parent="1" source="vHZkYSbnjGY460X2LnDK-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="E_AiTrainerMessage" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vHZkYSbnjGY460X2LnDK-18" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 11px; text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;Генерирует&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;font-size: 11px; text-wrap-mode: nowrap; background-color: rgb(255, 255, 255);&quot;&gt;(Client)&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="100" x="660" y="560" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -2,45 +2,111 @@
 title Диаграмма вариантов использования системы фитнес-центра
 left to right direction
 skinparam actorStyle plain
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #EFF7FF
+  BorderColor #3B82F6
+}
 
-actor "Пользователь" as User
+actor "Гость" as Guest
+actor "Пользователь\n(Клиент)" as User
+actor "Тренер" as Trainer
 actor "Администратор" as Admin
 
+' Гость наследует → Пользователь
+Guest <|-- User
+User  <|-- Admin
 
+rectangle "Система фитнес-центра" {
 
+  ' ─── Публичный доступ ───
+  package "Публичный доступ" {
     usecase "Зарегистрироваться" as UC_REGISTER
-    usecase "Просмотреть\nабонементы" as UC_VIEW_MEMB
-    usecase "Просмотреть\nрасписание" as UC_VIEW_SCHED
-
-
-
-    usecase "Оформить\nабонемент" as UC_BUY
-    usecase "Записаться\nна тренировку" as UC_BOOK
-    usecase "Записать\nрезультат тренировки" as UC_progress
     usecase "Войти в систему" as UC_LOGIN
+    usecase "Просмотреть\nабонементы" as UC_VIEW_MEMB
+    usecase "Просмотреть\nрасписание\nгрупповых занятий" as UC_VIEW_SCHED
+    usecase "Просмотреть\nкаталог тренеров" as UC_VIEW_TRAINERS
+  }
 
+  ' ─── Клиентские функции ───
+  package "Личный кабинет клиента" {
+    usecase "Купить абонемент" as UC_BUY
+    usecase "Оплатить заказ" as UC_PAY
+    usecase "Записаться на\nгрупповую тренировку" as UC_BOOK_GROUP
+    usecase "Отменить запись\nна групповую тренировку" as UC_CANCEL_GROUP
+    usecase "Выбрать тренера\nдля персоналки" as UC_CHOOSE_TRAINER
+    usecase "Записаться на\nперсональную тренировку" as UC_BOOK_PERSONAL
+    usecase "Отменить персональную\nтренировку" as UC_CANCEL_PERSONAL
+    usecase "Добавить занятие\nв Google Calendar" as UC_CALENDAR
+    usecase "Управлять\nтрекерами прогресса" as UC_PROGRESS
+    usecase "Загрузить аватар" as UC_AVATAR
+    usecase "Использовать\nAI-консультанта" as UC_AI
+  }
+
+  ' ─── Тренерские функции ───
+  package "Кабинет тренера" {
+    usecase "Открыть слоты\nперсональных тренировок" as UC_SLOTS
+    usecase "Просмотреть своё\nрасписание" as UC_MY_SCHEDULE
+    usecase "Просмотреть прогресс\nклиента" as UC_VIEW_CLIENT
+    usecase "Обновить показатели\nклиента" as UC_UPDATE_CLIENT
+  }
+
+  ' ─── Администрирование ───
+  package "Административная панель" {
     usecase "Управлять\nпользователями" as UC_ADM_USERS
+    usecase "Назначать роли\nпользователям" as UC_ADM_ROLES
     usecase "Управлять\nабонементами" as UC_ADM_MEMB
-    usecase "Управлять\nрасписанием\nи тренировками" as UC_ADM_TRAIN
-       
-    
+    usecase "Управлять\nгрупповыми тренировками\nи расписанием" as UC_ADM_TRAIN
+    usecase "Управлять профилем\nтренера (фото, ранг)" as UC_ADM_COACHES
+    usecase "Удалить тренера" as UC_ADM_FIRE
+    usecase "Просмотреть все\nперсональные записи" as UC_ADM_PERSONAL
+    usecase "Отменить персональную\nзапись (admin)" as UC_ADM_CANCEL
+  }
+}
 
+' ─── Гость ───
+Guest --> UC_REGISTER
+Guest --> UC_LOGIN
+Guest --> UC_VIEW_MEMB
+Guest --> UC_VIEW_SCHED
+Guest --> UC_VIEW_TRAINERS
 
+' ─── Пользователь (клиент) ───
+User --> UC_BUY
+User --> UC_PAY
+User --> UC_BOOK_GROUP
+User --> UC_CANCEL_GROUP
+User --> UC_CHOOSE_TRAINER
+User --> UC_BOOK_PERSONAL
+User --> UC_CANCEL_PERSONAL
+User --> UC_CALENDAR
+User --> UC_PROGRESS
+User --> UC_AVATAR
+User --> UC_AI
 
+UC_BOOK_GROUP ..> UC_CALENDAR : <<extend>>
+UC_BOOK_PERSONAL ..> UC_CALENDAR : <<extend>>
+UC_BOOK_GROUP ..> UC_BUY : <<include>>
+UC_BOOK_PERSONAL ..> UC_BUY : <<include>>
+UC_AI ..> UC_BUY : <<include>>
 
-' Пользователь
-UC_LOGIN <-- User
- UC_VIEW_MEMB <-- User
- UC_VIEW_SCHED <-- User
- UC_BUY <-- User
- UC_BOOK <-- User
- UC_progress <-- User
- UC_REGISTER <-- User
+' ─── Тренер ───
+Trainer --> UC_LOGIN
+Trainer --> UC_SLOTS
+Trainer --> UC_MY_SCHEDULE
+Trainer --> UC_VIEW_CLIENT
+Trainer --> UC_UPDATE_CLIENT
 
-' Администратор
-Admin --> UC_LOGIN
+UC_UPDATE_CLIENT ..> UC_VIEW_CLIENT : <<include>>
+
+' ─── Администратор ───
 Admin --> UC_ADM_USERS
+Admin --> UC_ADM_ROLES
 Admin --> UC_ADM_MEMB
 Admin --> UC_ADM_TRAIN
+Admin --> UC_ADM_COACHES
+Admin --> UC_ADM_FIRE
+Admin --> UC_ADM_PERSONAL
+Admin --> UC_ADM_CANCEL
 
 @enduml

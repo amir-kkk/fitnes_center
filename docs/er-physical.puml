@@ -1,0 +1,156 @@
+@startuml er-physical
+
+
+
+left to right direction
+
+skinparam monochrome true
+skinparam linetype polyline
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 55
+skinparam ranksep 90
+
+skinparam entity {
+  BackgroundColor White
+  BorderColor #455A64
+  FontSize 12
+  FontName Helvetica
+}
+
+skinparam EntityHeader {
+  BackgroundColor #37474F
+  FontColor White
+  FontSize 13
+  FontStyle Bold
+}
+
+hide circle
+hide methods
+hide stereotypes
+
+together {
+  entity Memberships << (T,#2E7D32) >> {
+    * **Id** : serial <<PK>>
+    --
+    * Name : text
+    * Price : decimal(10,2)
+    * DurationDays : int
+    * CreatedAt : timestamptz
+  }
+
+  entity MembershipOptions << (T,#2E7D32) >> {
+    * **Id** : serial <<PK>>
+    --
+    * MembershipId : int <<FK>>
+    * OptionText : text
+  }
+
+  entity Purchases << (T,#E65100) >> {
+    * **Id** : serial <<PK>>
+    --
+    * UserId : uuid <<FK>>
+    * MembershipId : int <<FK>>
+    * PriceAtPurchase : decimal(10,2)
+    * Status : int  ' 0=Pending 1=Paid
+    * CreatedAt : timestamptz
+  }
+}
+
+
+entity Users << (T,#1565C0) >> {
+  * **Id** : uuid <<PK>>
+  --
+  * Email : varchar(255) <<UQ>>
+  * PasswordHash : text
+  * Role : varchar(20)
+    PhotoUrl : varchar(500) <<NULL>>
+    TrainerRank : int <<NULL, 1-5>>
+  * FullName : text
+  * CreatedAt : timestamptz
+}
+
+together {
+  entity Categories << (T,#6A1B9A) >> {
+    * **Id** : serial <<PK>>
+    --
+    * Name : text
+  }
+
+  entity Trainings << (T,#6A1B9A) >> {
+    * **Id** : serial <<PK>>
+    --
+    * CategoryId : int <<FK>>
+    * TrainerId : uuid <<FK>>
+    * Description : text
+    * StartTime : timestamptz
+    * MaxParticipants : int
+  }
+
+  entity Bookings << (T,#B71C1C) >> {
+    * **Id** : serial <<PK>>
+    --
+    * TrainingId : int <<FK>>
+    * UserId : uuid <<FK>>
+    * Status : int  ' 0=Active 1=Cancelled
+    <<UQ (TrainingId,UserId) WHERE Active>>
+  }
+}
+
+together {
+  entity PersonalWorkouts << (T,#BF360C) >> {
+    * **Id** : serial <<PK>>
+    --
+    * TrainerId : uuid <<FK, CASCADE>>
+      ClientId : uuid <<FK, SET NULL>>
+    * DateTime : timestamptz
+    * Price : decimal(10,2)
+    * IsBooked : boolean
+    <<UQ (TrainerId, DateTime)>>
+  }
+
+  entity ProgressTrackers << (T,#F57F17) >> {
+    * **Id** : serial <<PK>>
+    --
+    * UserId : uuid <<FK>>
+    * Title : text
+    * GoalValue : double precision
+    * Unit : text
+    * CreatedAt : timestamptz
+  }
+
+  entity ProgressEntries << (T,#F57F17) >> {
+    * **Id** : serial <<PK>>
+    --
+    * TrackerId : int <<FK, CASCADE>>
+    * Value : double precision
+    * DateRecorded : timestamptz
+  }
+
+  entity AiTrainerMessages << (T,#37474F) >> {
+    * **Id** : serial <<PK>>
+    --
+    * UserId : uuid <<FK, CASCADE>>
+    * CreatedAt : timestamptz
+    <<IX (UserId, CreatedAt)>>
+  }
+}
+
+Memberships      ||--o{ MembershipOptions
+Memberships      ||--o{ Purchases
+Users            ||--o{ Purchases
+
+Categories       ||--o{ Trainings
+Users            ||--o{ Trainings
+Trainings        ||--o{ Bookings
+Users            ||--o{ Bookings
+
+Users            ||--o{ PersonalWorkouts : "trainer"
+Users            |o--o{ PersonalWorkouts : "client"
+
+Users            ||--o{ ProgressTrackers
+ProgressTrackers ||--o{ ProgressEntries
+
+Users            ||--o{ AiTrainerMessages
+
+@enduml
