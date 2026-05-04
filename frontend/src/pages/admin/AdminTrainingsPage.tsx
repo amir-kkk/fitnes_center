@@ -25,11 +25,19 @@ export default function AdminTrainingsPage() {
   const [dlgOpen, setDlgOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  const loadCategories = useCallback(async () => {
+    const { data } = await api.get<Category[]>('/categories');
+    setCategories(data);
+  }, []);
 
   useEffect(() => {
-    api.get<Category[]>('/categories').then(({ data }) => setCategories(data));
-    api.get<Coach[]>('/coaches').then(({ data }) => setTrainers(data));
-  }, []);
+    loadCategories().catch(() => notify('Ошибка загрузки категорий', 'error'));
+    api.get<Coach[]>('/coaches')
+      .then(({ data }) => setTrainers(data))
+      .catch(() => notify('Ошибка загрузки тренеров', 'error'));
+  }, [loadCategories, notify]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -75,6 +83,20 @@ export default function AdminTrainingsPage() {
       notify('Удалено', 'info');
       fetchData();
     } catch { notify('Ошибка удаления', 'error'); }
+  };
+
+  const handleCreateCategory = async () => {
+    const name = newCategoryName.trim();
+    if (!name) return;
+    try {
+      const { data } = await api.post<Category>('/categories', { name });
+      setCategories((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+      setForm((prev) => ({ ...prev, categoryId: data.id }));
+      setNewCategoryName('');
+      notify('Новый вид групповой тренировки добавлен', 'success');
+    } catch (err: any) {
+      notify(err.response?.data?.detail || 'Не удалось добавить категорию', 'error');
+    }
   };
 
   const columns: GridColDef[] = [
@@ -132,6 +154,27 @@ export default function AdminTrainingsPage() {
                 {trainers.map((c) => <MenuItem key={c.id} value={c.id}>{c.fullName}</MenuItem>)}
               </Select>
             </FormControl>
+          </Stack>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mt={1}>
+          <TextField
+            label="Новый вид тренировки"
+            fullWidth
+            size="small"
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            InputProps={{
+              endAdornment: (
+                <Button
+                  size="small"
+                  onClick={handleCreateCategory}
+                  disabled={!newCategoryName.trim()}
+                  sx={{ whiteSpace: 'nowrap', ml: 1 }}
+                >
+                  Добавить
+                </Button>
+              ),
+            }}
+            />
           </Stack>
           <Stack direction="row" spacing={2} mt={1}>
             <TextField label="Дата и время" type="datetime-local" fullWidth size="small"

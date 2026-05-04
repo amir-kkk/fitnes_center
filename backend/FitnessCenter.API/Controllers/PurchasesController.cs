@@ -8,7 +8,7 @@ namespace FitnessCenter.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "User,Admin")]
+[Authorize(Roles = "User,Admin,Manager")]
 public class PurchasesController : ControllerBase
 {
     private readonly PurchaseService _svc;
@@ -28,7 +28,7 @@ public class PurchasesController : ControllerBase
     /// <summary>
     /// Все покупки — только для админа
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager")]
     [HttpGet]
     public async Task<ActionResult<PagedResult<PurchaseDto>>> GetAll(
         [FromQuery] int page = 1, [FromQuery] int pageSize = 10,

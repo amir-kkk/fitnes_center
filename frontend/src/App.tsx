@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -21,6 +21,14 @@ import AdminMembershipsPage from './pages/admin/AdminMembershipsPage';
 import AdminTrainingsPage from './pages/admin/AdminTrainingsPage';
 import AdminPurchasesPage from './pages/admin/AdminPurchasesPage';
 import AdminPersonalWorkoutsPage from './pages/admin/AdminPersonalWorkoutsPage';
+import AdminAuditLogsPage from './pages/admin/AdminAuditLogsPage';
+
+function AdminEntryRoute() {
+  const role = useAuthStore((s) => s.user?.role);
+  if (role === 'Manager') return <Navigate to="/admin/coaches" replace />;
+  if (role === 'Admin') return <AdminDashboard />;
+  return <Navigate to="/" replace />;
+}
 
 export default function App() {
   const loadUser = useAuthStore((s) => s.loadUser);
@@ -57,15 +65,30 @@ export default function App() {
 
       {/* Админ-панель */}
       <Route element={
-        <ProtectedRoute requiredRole="Admin"><AdminLayout /></ProtectedRoute>
+        <ProtectedRoute requiredRoles={['Admin', 'Manager']}><AdminLayout /></ProtectedRoute>
       }>
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/users" element={<AdminUsersPage />} />
-        <Route path="/admin/coaches" element={<AdminCoachesPage />} />
-        <Route path="/admin/memberships" element={<AdminMembershipsPage />} />
-        <Route path="/admin/trainings" element={<AdminTrainingsPage />} />
-        <Route path="/admin/purchases" element={<AdminPurchasesPage />} />
-        <Route path="/admin/personal-workouts" element={<AdminPersonalWorkoutsPage />} />
+        <Route path="/admin" element={<AdminEntryRoute />} />
+        <Route path="/admin/users" element={
+          <ProtectedRoute requiredRole="Admin"><AdminUsersPage /></ProtectedRoute>
+        } />
+        <Route path="/admin/audit-logs" element={
+          <ProtectedRoute requiredRole="Admin"><AdminAuditLogsPage /></ProtectedRoute>
+        } />
+        <Route path="/admin/coaches" element={
+          <ProtectedRoute requiredRole="Manager"><AdminCoachesPage /></ProtectedRoute>
+        } />
+        <Route path="/admin/memberships" element={
+          <ProtectedRoute requiredRole="Manager"><AdminMembershipsPage /></ProtectedRoute>
+        } />
+        <Route path="/admin/trainings" element={
+          <ProtectedRoute requiredRole="Manager"><AdminTrainingsPage /></ProtectedRoute>
+        } />
+        <Route path="/admin/purchases" element={
+          <ProtectedRoute requiredRole="Manager"><AdminPurchasesPage /></ProtectedRoute>
+        } />
+        <Route path="/admin/personal-workouts" element={
+          <ProtectedRoute requiredRole="Manager"><AdminPersonalWorkoutsPage /></ProtectedRoute>
+        } />
       </Route>
     </Routes>
   );

@@ -45,6 +45,7 @@ export default function AdminUsersPage() {
           onChange={(e) => handleRoleChange(params.row.id, e.target.value as string)}>
           <MenuItem value="User">User</MenuItem>
           <MenuItem value="Trainer">Trainer</MenuItem>
+          <MenuItem value="Manager">Manager</MenuItem>
           <MenuItem value="Admin">Admin</MenuItem>
         </Select>
       ),

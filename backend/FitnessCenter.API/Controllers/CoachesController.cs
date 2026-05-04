@@ -28,7 +28,7 @@ public class CoachesController : ControllerBase
         return Ok(await _svc.GetCoachesAsync());
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager")]
     [HttpPut("{id}")]
     public async Task<ActionResult<CoachDto>> Update(Guid id, UpdateCoachDto dto)
     {
@@ -36,7 +36,7 @@ public class CoachesController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -48,7 +48,7 @@ public class CoachesController : ControllerBase
     /// Загрузка фото тренера из файла (multipart/form-data).
     /// Допустимые форматы: jpg, png, webp. Макс. 5 МБ.
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager")]
     [HttpPost("{id}/photo")]
     public async Task<ActionResult<CoachDto>> UploadPhoto(Guid id, IFormFile file)
     {

@@ -98,10 +98,30 @@ public class TrainerUpdateProgressDtoValidator : AbstractValidator<TrainerUpdate
     public TrainerUpdateProgressDtoValidator()
     {
         RuleFor(x => x.ClientId).NotEmpty();
-        RuleFor(x => x.WeightKg).GreaterThanOrEqualTo(0).When(x => x.WeightKg.HasValue);
-        RuleFor(x => x.ChestCm).GreaterThanOrEqualTo(0).When(x => x.ChestCm.HasValue);
-        RuleFor(x => x.WaistCm).GreaterThanOrEqualTo(0).When(x => x.WaistCm.HasValue);
-        RuleFor(x => x.HipsCm).GreaterThanOrEqualTo(0).When(x => x.HipsCm.HasValue);
+        RuleFor(x => x.Updates)
+            .NotNull()
+            .NotEmpty()
+            .WithMessage("Передайте хотя бы один параметр для обновления");
+
+        RuleForEach(x => x.Updates).ChildRules(item =>
+        {
+            item.RuleFor(i => i.Value).GreaterThanOrEqualTo(0);
+            item.RuleFor(i => i)
+                .Must(i => i.TrackerId.HasValue || !string.IsNullOrWhiteSpace(i.Title))
+                .WithMessage("Для нового параметра укажите название");
+        });
+    }
+}
+
+public class CreatePersonalWorkoutRangeDtoValidator : AbstractValidator<CreatePersonalWorkoutRangeDto>
+{
+    public CreatePersonalWorkoutRangeDtoValidator()
+    {
+        RuleFor(x => x.StartDateTime).NotEmpty();
+        RuleFor(x => x.EndDateTime).NotEmpty();
+        RuleFor(x => x)
+            .Must(x => x.EndDateTime > x.StartDateTime)
+            .WithMessage("Конец периода должен быть позже начала");
     }
 }
 

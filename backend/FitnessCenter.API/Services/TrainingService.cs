@@ -54,6 +54,7 @@ public class TrainingService
     public async Task<TrainingDto> CreateAsync(CreateTrainingDto dto)
     {
         await EnsureTrainerAsync(dto.TrainerId);
+        await EnsureNoPersonalWorkoutConflictAsync(dto.TrainerId, dto.StartTime);
 
         var entity = new Training
         {
@@ -72,6 +73,7 @@ public class TrainingService
     public async Task<TrainingDto> UpdateAsync(int id, UpdateTrainingDto dto)
     {
         await EnsureTrainerAsync(dto.TrainerId);
+        await EnsureNoPersonalWorkoutConflictAsync(dto.TrainerId, dto.StartTime);
 
         var entity = await _db.Trainings.FindAsync(id)
             ?? throw new KeyNotFoundException("Тренировка не найдена");
@@ -202,6 +204,18 @@ public class TrainingService
         var exists = await _db.Users.AnyAsync(u => u.Id == trainerId && u.Role == "Trainer");
         if (!exists)
             throw new InvalidOperationException("Выбранный пользователь не является тренером");
+    }
+
+    private async Task EnsureNoPersonalWorkoutConflictAsync(Guid trainerId, DateTime trainingStartTime)
+    {
+        var trainingEndTime = trainingStartTime.AddHours(1);
+        var hasConflict = await _db.PersonalWorkouts.AnyAsync(pw =>
+            pw.TrainerId == trainerId &&
+            pw.DateTime < trainingEndTime &&
+            pw.DateTime.AddHours(1) > trainingStartTime);
+
+        if (hasConflict)
+            throw new InvalidOperationException("Нельзя создать групповую тренировку: у тренера есть персональный слот на это время");
     }
 
     private static TrainingDto MapTraining(Training t) =>

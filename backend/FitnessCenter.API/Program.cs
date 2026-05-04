@@ -13,8 +13,12 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // ═══ PostgreSQL ═══
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<AuditSaveChangesInterceptor>();
+builder.Services.AddDbContext<AppDbContext>((sp, options) =>
+    options
+        .UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+        .AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>()));
 
 // ═══ JWT-аутентификация ═══
 var jwt = builder.Configuration.GetSection("JwtSettings");

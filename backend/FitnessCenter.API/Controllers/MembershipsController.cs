@@ -29,7 +29,7 @@ public class MembershipsController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager")]
     [HttpPost]
     public async Task<ActionResult<MembershipDto>> Create(CreateMembershipDto dto)
     {
@@ -37,7 +37,7 @@ public class MembershipsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager")]
     [HttpPut("{id}")]
     public async Task<ActionResult<MembershipDto>> Update(int id, UpdateMembershipDto dto)
     {
@@ -45,7 +45,7 @@ public class MembershipsController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {

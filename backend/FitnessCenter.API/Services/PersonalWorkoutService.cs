@@ -33,6 +33,8 @@ public class PersonalWorkoutService
         var trainer = await _db.Users.FirstOrDefaultAsync(u => u.Id == trainerId && u.Role == "Trainer")
             ?? throw new KeyNotFoundException("Тренер не найден");
 
+        await EnsureNoGroupTrainingConflictAsync(trainerId, dto.DateTime);
+
         var exists = await _db.PersonalWorkouts.AnyAsync(w =>
             w.TrainerId == trainerId && w.DateTime == dto.DateTime);
         if (exists)
@@ -56,10 +58,69 @@ public class PersonalWorkoutService
         return MapWorkout(slot);
     }
 
+    public async Task<List<PersonalWorkoutSlotDto>> CreateTrainerSlotsRangeAsync(Guid trainerId, CreatePersonalWorkoutRangeDto dto)
+    {
+        var start = dto.StartDateTime;
+        var end = dto.EndDateTime;
+        if (start <= DateTime.UtcNow)
+            throw new InvalidOperationException("Начало периода должно быть в будущем");
+        if (end <= start)
+            throw new InvalidOperationException("Некорректный диапазон времени");
+
+        var trainer = await _db.Users.FirstOrDefaultAsync(u => u.Id == trainerId && u.Role == "Trainer")
+            ?? throw new KeyNotFoundException("Тренер не найден");
+
+        for (var current = start; current < end; current = current.AddHours(1))
+            await EnsureNoGroupTrainingConflictAsync(trainerId, current);
+
+        var created = new List<PersonalWorkout>();
+        for (var current = start; current < end; current = current.AddHours(1))
+        {
+            var exists = await _db.PersonalWorkouts.AnyAsync(w =>
+                w.TrainerId == trainerId && w.DateTime == current);
+            if (exists)
+                continue;
+
+            created.Add(new PersonalWorkout
+            {
+                TrainerId = trainerId,
+                DateTime = current,
+                Price = CalculatePrice(trainer.TrainerRank),
+                IsBooked = false
+            });
+        }
+
+        if (created.Count == 0)
+            throw new InvalidOperationException("В указанном диапазоне нет новых свободных слотов");
+
+        _db.PersonalWorkouts.AddRange(created);
+        await _db.SaveChangesAsync();
+
+        var createdIds = created.Select(x => x.Id).ToList();
+        return await _db.PersonalWorkouts
+            .Include(w => w.Trainer)
+            .Where(w => createdIds.Contains(w.Id))
+            .OrderBy(w => w.DateTime)
+            .Select(w => new PersonalWorkoutSlotDto(
+                w.Id,
+                w.TrainerId,
+                w.Trainer.FullName,
+                w.ClientId,
+                w.Client != null ? w.Client.FullName : null,
+                w.DateTime,
+                w.Price,
+                w.IsBooked))
+            .ToListAsync();
+    }
+
     public async Task<List<PersonalWorkoutSlotDto>> GetAvailableSlotsByTrainerAsync(Guid trainerId)
     {
         return await _db.PersonalWorkouts
             .Where(w => w.TrainerId == trainerId && !w.IsBooked && w.DateTime > DateTime.UtcNow)
+            .Where(w => !_db.PersonalWorkouts.Any(b =>
+                b.TrainerId == trainerId &&
+                b.IsBooked &&
+                (b.DateTime == w.DateTime.AddHours(-1) || b.DateTime == w.DateTime.AddHours(1))))
             .OrderBy(w => w.DateTime)
             .Select(w => new PersonalWorkoutSlotDto(
                 w.Id,
@@ -88,6 +149,13 @@ public class PersonalWorkoutService
 
         if (workout.DateTime <= DateTime.UtcNow)
             throw new InvalidOperationException("Нельзя купить прошедший слот");
+
+        var hasNeighbourBooking = await _db.PersonalWorkouts.AnyAsync(w =>
+            w.TrainerId == workout.TrainerId &&
+            w.IsBooked &&
+            (w.DateTime == workout.DateTime.AddHours(-1) || w.DateTime == workout.DateTime.AddHours(1)));
+        if (hasNeighbourBooking)
+            throw new InvalidOperationException("Нельзя бронировать слот вплотную к уже занятому времени тренера");
 
         var buyer = await _db.Users.FindAsync(clientId)
             ?? throw new KeyNotFoundException("Пользователь не найден");
@@ -205,10 +273,48 @@ public class PersonalWorkoutService
     {
         await EnsureTrainerCanManageClientAsync(trainerId, dto.ClientId);
 
-        await UpsertTrackerEntryAsync(dto.ClientId, "Вес", "кг", dto.WeightKg);
-        await UpsertTrackerEntryAsync(dto.ClientId, "Грудь", "см", dto.ChestCm);
-        await UpsertTrackerEntryAsync(dto.ClientId, "Талия", "см", dto.WaistCm);
-        await UpsertTrackerEntryAsync(dto.ClientId, "Бедра", "см", dto.HipsCm);
+        foreach (var update in dto.Updates)
+        {
+            if (update.Value < 0)
+                continue;
+
+            ProgressTracker? tracker = null;
+            if (update.TrackerId.HasValue)
+            {
+                tracker = await _db.ProgressTrackers
+                    .FirstOrDefaultAsync(t => t.Id == update.TrackerId.Value && t.UserId == dto.ClientId);
+            }
+
+            if (tracker == null)
+            {
+                if (string.IsNullOrWhiteSpace(update.Title))
+                    continue;
+
+                tracker = await _db.ProgressTrackers.FirstOrDefaultAsync(t =>
+                    t.UserId == dto.ClientId &&
+                    t.Title.ToLower() == update.Title.ToLower());
+
+                if (tracker == null)
+                {
+                    tracker = new ProgressTracker
+                    {
+                        UserId = dto.ClientId,
+                        Title = update.Title.Trim(),
+                        Unit = string.IsNullOrWhiteSpace(update.Unit) ? "ед." : update.Unit.Trim(),
+                        GoalValue = update.Value,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _db.ProgressTrackers.Add(tracker);
+                }
+            }
+
+            _db.ProgressEntries.Add(new ProgressEntry
+            {
+                Tracker = tracker,
+                Value = update.Value,
+                DateRecorded = DateTime.UtcNow
+            });
+        }
 
         await _db.SaveChangesAsync();
         return await GetClientProgressForTrainerAsync(trainerId, dto.ClientId);
@@ -263,34 +369,6 @@ public class PersonalWorkoutService
             throw new UnauthorizedAccessException("Нет доступа к прогрессу этого клиента");
     }
 
-    private async Task UpsertTrackerEntryAsync(Guid clientId, string title, string unit, double? value)
-    {
-        if (!value.HasValue) return;
-
-        var tracker = await _db.ProgressTrackers
-            .FirstOrDefaultAsync(t => t.UserId == clientId && t.Title == title);
-
-        if (tracker == null)
-        {
-            tracker = new ProgressTracker
-            {
-                UserId = clientId,
-                Title = title,
-                Unit = unit,
-                GoalValue = value.Value,
-                CreatedAt = DateTime.UtcNow
-            };
-            _db.ProgressTrackers.Add(tracker);
-        }
-
-        _db.ProgressEntries.Add(new ProgressEntry
-        {
-            Tracker = tracker,
-            Value = value.Value,
-            DateRecorded = DateTime.UtcNow
-        });
-    }
-
     private static PersonalWorkoutSlotDto MapWorkout(PersonalWorkout w) =>
         new(
             w.Id,
@@ -333,5 +411,17 @@ public class PersonalWorkoutService
 
         return new ProgressTrackerDto(
             t.Id, t.Title, t.GoalValue, t.Unit, t.CreatedAt, lastValue, changePercent);
+    }
+
+    private async Task EnsureNoGroupTrainingConflictAsync(Guid trainerId, DateTime slotStartTime)
+    {
+        var slotEndTime = slotStartTime.AddHours(1);
+        var hasConflict = await _db.Trainings.AnyAsync(t =>
+            t.TrainerId == trainerId &&
+            t.StartTime < slotEndTime &&
+            t.StartTime.AddHours(1) > slotStartTime);
+
+        if (hasConflict)
+            throw new InvalidOperationException("Нельзя открыть персональный слот: у тренера есть групповая тренировка на это время");
     }
 }

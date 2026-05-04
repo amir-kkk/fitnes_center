@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Outlet, useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
 import {
   Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText,
@@ -5,24 +6,48 @@ import {
 } from '@mui/material';
 import {
   People, CardMembership, FitnessCenter, ShoppingCart,
-  ArrowBack, Dashboard, SportsKabaddi, EventAvailable,
+  ArrowBack, Dashboard, SportsKabaddi, EventAvailable, History,
 } from '@mui/icons-material';
+import { useAuthStore } from '../stores/authStore';
 
 const DRAWER_WIDTH = 240;
-
-const menuItems = [
-  { text: 'Обзор', icon: <Dashboard />, path: '/admin' },
-  { text: 'Пользователи', icon: <People />, path: '/admin/users' },
-  { text: 'Тренеры', icon: <SportsKabaddi />, path: '/admin/coaches' },
-  { text: 'Абонементы', icon: <CardMembership />, path: '/admin/memberships' },
-  { text: 'Групповые тренировки', icon: <FitnessCenter />, path: '/admin/trainings' },
-  { text: 'Персональные тренировки', icon: <EventAvailable />, path: '/admin/personal-workouts' },
-  { text: 'Покупки', icon: <ShoppingCart />, path: '/admin/purchases' },
-];
 
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const user = useAuthStore((s) => s.user);
+  const isManager = user?.role === 'Manager';
+  const isAdmin = user?.role === 'Admin';
+
+  const menuItems = isManager
+    ? [
+        { text: 'Тренеры', icon: <SportsKabaddi />, path: '/admin/coaches' },
+        { text: 'Абонементы', icon: <CardMembership />, path: '/admin/memberships' },
+        { text: 'Групповые тренировки', icon: <FitnessCenter />, path: '/admin/trainings' },
+        { text: 'Персональные тренировки', icon: <EventAvailable />, path: '/admin/personal-workouts' },
+        { text: 'Покупки', icon: <ShoppingCart />, path: '/admin/purchases' },
+      ]
+    : [
+        { text: 'Обзор', icon: <Dashboard />, path: '/admin' },
+        { text: 'Пользователи', icon: <People />, path: '/admin/users' },
+        { text: 'Audit Log', icon: <History />, path: '/admin/audit-logs' },
+      ];
+
+  useEffect(() => {
+    if (isManager && location.pathname === '/admin') {
+      navigate('/admin/coaches', { replace: true });
+      return;
+    }
+
+    if (
+      isAdmin &&
+      location.pathname !== '/admin' &&
+      location.pathname !== '/admin/users' &&
+      location.pathname !== '/admin/audit-logs'
+    ) {
+      navigate('/admin', { replace: true });
+    }
+  }, [isManager, isAdmin, location.pathname, navigate]);
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -31,7 +56,7 @@ export default function AdminLayout() {
           <IconButton color="inherit" onClick={() => navigate('/')} sx={{ mr: 1 }}>
             <ArrowBack />
           </IconButton>
-          <Typography variant="h6">Админ-панель</Typography>
+          <Typography variant="h6">{isManager ? 'Панель менеджера' : 'Админ-панель'}</Typography>
         </Toolbar>
       </AppBar>
 

@@ -58,8 +58,9 @@ export default function PersonalWorkoutsPage() {
   };
 
   const visibleSlots = useMemo(() => {
-    if (!selectedDate) return slots;
-    return slots.filter((s) => dayjs(s.dateTime).isSame(selectedDate, 'day'));
+    const futureSlots = slots.filter((s) => dayjs(s.dateTime).isAfter(dayjs()));
+    if (!selectedDate) return futureSlots;
+    return futureSlots.filter((s) => dayjs(s.dateTime).isSame(selectedDate, 'day'));
   }, [slots, selectedDate]);
 
   const handleBuy = async (slotId: number) => {

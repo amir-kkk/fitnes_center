@@ -108,12 +108,16 @@ export interface PersonalWorkoutSlot {
   isBooked: boolean;
 }
 
+export interface TrainerProgressUpdateItemPayload {
+  trackerId?: number;
+  title?: string;
+  unit?: string;
+  value: number;
+}
+
 export interface TrainerUpdateProgressPayload {
   clientId: string;
-  weightKg?: number;
-  chestCm?: number;
-  waistCm?: number;
-  hipsCm?: number;
+  updates: TrainerProgressUpdateItemPayload[];
 }
 
 export interface PagedResult<T> {
@@ -138,4 +142,25 @@ export interface AiTrainerStatus {
 export interface AiTrainerChatResponse {
   reply: string;
   remainingMessages: number;
+}
+
+export interface AuditLogListItem {
+  id: number;
+  timestamp: string;
+  userId: string | null;
+  userDisplayName: string;
+  entityName: string;
+  action: 'Insert' | 'Update' | 'Delete' | string;
+}
+
+export interface AuditLogDetails extends AuditLogListItem {
+  oldValues: string | null;
+  newValues: string | null;
+}
+
+export interface AdminOverviewStats {
+  clientsCount: number;
+  trainersCount: number;
+  managersCount: number;
+  auditLogsLast24hCount: number;
 }

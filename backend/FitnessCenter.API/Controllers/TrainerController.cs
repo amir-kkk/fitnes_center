@@ -27,6 +27,12 @@ public class TrainerController : ControllerBase
         return Ok(await _svc.CreateTrainerSlotAsync(GetUserId(), dto));
     }
 
+    [HttpPost("slots/range")]
+    public async Task<ActionResult<List<PersonalWorkoutSlotDto>>> CreateSlotsRange(CreatePersonalWorkoutRangeDto dto)
+    {
+        return Ok(await _svc.CreateTrainerSlotsRangeAsync(GetUserId(), dto));
+    }
+
     [HttpGet("client-progress/{clientId:guid}")]
     public async Task<ActionResult<List<ProgressTrackerDto>>> GetClientProgress(Guid clientId)
     {

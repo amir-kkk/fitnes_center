@@ -34,10 +34,8 @@ export default function Layout() {
               <Button color="inherit" component={RouterLink} to="/memberships"
                 sx={{ borderRadius: 20 }}>Абонементы</Button>
             )}
-            {user?.role !== 'Trainer' && (
-              <Button color="inherit" component={RouterLink} to="/trainings"
-                sx={{ borderRadius: 20 }}>Расписание</Button>
-            )}
+            <Button color="inherit" component={RouterLink} to="/trainings"
+              sx={{ borderRadius: 20 }}>Расписание</Button>
             {user && (
               <Button color="inherit" component={RouterLink} to="/personal-workouts"
                 sx={{ borderRadius: 20 }}>
@@ -54,8 +52,8 @@ export default function Layout() {
             )}
             {user && <Button color="inherit" component={RouterLink} to="/profile"
               sx={{ borderRadius: 20 }}>Кабинет</Button>}
-            {user?.role === 'Admin' && (
-              <Chip label="Админ" size="small" clickable
+            {(user?.role === 'Admin' || user?.role === 'Manager') && (
+              <Chip label={user.role === 'Manager' ? 'Менеджер' : 'Админ'} size="small" clickable
                 component={RouterLink} to="/admin"
                 sx={{ ml: 1, alignSelf: 'center', bgcolor: '#FFFFFF', color: '#2C2C2C', fontWeight: 600,
                   '&:hover': { bgcolor: '#D9D9D9' } }} />

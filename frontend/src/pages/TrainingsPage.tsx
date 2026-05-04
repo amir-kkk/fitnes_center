@@ -50,6 +50,8 @@ export default function TrainingsPage() {
 
   useEffect(() => { fetchTrainings(); }, [categoryId, trainerId, date]);
 
+  const visibleTrainings = trainings.filter((t) => dayjs(t.startTime).isAfter(dayjs()));
+
   const handleBook = async (trainingId: number) => {
     try {
       await api.post('/bookings', { trainingId });
@@ -78,15 +80,6 @@ export default function TrainingsPage() {
     setCalendarEvent(null);
   };
 
-  if (user?.role === 'Trainer') {
-    return (
-      <Box textAlign="center" mt={8}>
-        <Typography variant="h5" gutterBottom>Раздел недоступен для тренеров</Typography>
-        <Typography color="text.secondary">Запись на групповые тренировки для тренеров отключена.</Typography>
-      </Box>
-    );
-  }
-
   return (
     <>
       <Typography variant="h4" mb={3}>Расписание тренировок</Typography>
@@ -113,7 +106,7 @@ export default function TrainingsPage() {
 
       {loading ? <Box textAlign="center" mt={4}><CircularProgress /></Box> : (
         <Grid container spacing={3}>
-          {trainings.map((t) => {
+          {visibleTrainings.map((t) => {
             const spotsLeft = t.maxParticipants - t.currentParticipants;
             const fillPercent = (t.currentParticipants / t.maxParticipants) * 100;
             return (
@@ -144,7 +137,11 @@ export default function TrainingsPage() {
                       color={spotsLeft <= 2 ? 'error' : 'primary'} sx={{ mt: 1, borderRadius: 1 }} />
                   </CardContent>
                   <CardActions sx={{ p: 2 }}>
-                    {user ? (
+                    {user?.role === 'Trainer' ? (
+                      <Button variant="outlined" fullWidth disabled>
+                        Только просмотр
+                      </Button>
+                    ) : user ? (
                       <Button variant="contained" fullWidth disabled={spotsLeft <= 0}
                         onClick={() => handleBook(t.id)}>
                         {spotsLeft > 0 ? 'Записаться' : 'Мест нет'}
@@ -157,7 +154,7 @@ export default function TrainingsPage() {
               </Grid>
             );
           })}
-          {trainings.length === 0 && (
+          {visibleTrainings.length === 0 && (
             <Grid item xs={12}>
               <Typography textAlign="center" color="text.secondary">Тренировок не найдено</Typography>
             </Grid>

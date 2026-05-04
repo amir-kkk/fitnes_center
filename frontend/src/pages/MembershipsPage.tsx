@@ -15,6 +15,8 @@ export default function MembershipsPage() {
   const [memberships, setMemberships] = useState<Membership[]>([]);
   const [loading, setLoading] = useState(true);
   const [priceRange, setPriceRange] = useState<number[]>([0, 15000]);
+  const [maxPrice, setMaxPrice] = useState(15000);
+  const [boundsReady, setBoundsReady] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -27,7 +29,31 @@ export default function MembershipsPage() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, [priceRange]);
+  useEffect(() => {
+    const loadMaxPrice = async () => {
+      try {
+        const { data } = await api.get<PagedResult<Membership>>('/memberships', {
+          params: { page: 1, pageSize: 500 },
+        });
+        const max = data.items.length > 0 ? Math.max(...data.items.map((m) => m.price)) : 15000;
+        const normalizedMax = Math.max(1000, Math.ceil(max / 500) * 500);
+        setMaxPrice(normalizedMax);
+        setPriceRange([0, normalizedMax]);
+      } catch {
+        setMaxPrice(15000);
+        setPriceRange([0, 15000]);
+      } finally {
+        setBoundsReady(true);
+      }
+    };
+
+    loadMaxPrice();
+  }, []);
+
+  useEffect(() => {
+    if (!boundsReady) return;
+    fetchData();
+  }, [priceRange, boundsReady]);
 
   const handleBuy = async (membershipId: number) => {
     try {
@@ -57,7 +83,7 @@ export default function MembershipsPage() {
       <Box sx={{ maxWidth: 400, mb: 4 }}>
         <Typography gutterBottom>Цена: {priceRange[0]} ₽ — {priceRange[1]} ₽</Typography>
         <Slider value={priceRange} onChange={(_, v) => setPriceRange(v as number[])}
-          min={0} max={100000000000} step={500} valueLabelDisplay="auto" />
+          min={0} max={maxPrice} step={500} valueLabelDisplay="auto" />
       </Box>
 
       <Grid container spacing={3}>

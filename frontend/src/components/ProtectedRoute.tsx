@@ -5,10 +5,11 @@ import { CircularProgress, Box } from '@mui/material';
 interface Props {
   children: React.ReactNode;
   requiredRole?: string;
+  requiredRoles?: string[];
   disallowedRoles?: string[];
 }
 
-export default function ProtectedRoute({ children, requiredRole, disallowedRoles }: Props) {
+export default function ProtectedRoute({ children, requiredRole, requiredRoles, disallowedRoles }: Props) {
   const { user, isLoading } = useAuthStore();
 
   if (isLoading) {
@@ -22,6 +23,10 @@ export default function ProtectedRoute({ children, requiredRole, disallowedRoles
   if (!user) return <Navigate to="/login" replace />;
 
   if (requiredRole && user.role !== requiredRole) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requiredRoles && requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
 

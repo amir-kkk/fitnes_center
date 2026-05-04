@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
     public DbSet<AiTrainerMessage> AiTrainerMessages => Set<AiTrainerMessage>();
     public DbSet<ProgressTracker> ProgressTrackers => Set<ProgressTracker>();
     public DbSet<ProgressEntry> ProgressEntries => Set<ProgressEntry>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -127,6 +128,20 @@ public class AppDbContext : DbContext
                 .WithMany(pt => pt.Entries)
                 .HasForeignKey(pe => pe.TrackerId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ─── AuditLog ───
+        mb.Entity<AuditLog>(e =>
+        {
+            e.HasIndex(a => a.Timestamp);
+            e.HasIndex(a => a.EntityName);
+            e.HasIndex(a => a.Action);
+            e.Property(a => a.Action).HasMaxLength(16);
+            e.Property(a => a.EntityName).HasMaxLength(128);
+            e.HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

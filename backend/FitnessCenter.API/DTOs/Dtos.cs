@@ -72,8 +72,9 @@ public record PersonalWorkoutSlotDto(
     int Id, Guid TrainerId, string TrainerName, Guid? ClientId, string? ClientName,
     DateTime DateTime, decimal Price, bool IsBooked);
 public record CreatePersonalWorkoutSlotDto(DateTime DateTime);
-public record TrainerUpdateProgressDto(
-    Guid ClientId, double? WeightKg, double? ChestCm, double? WaistCm, double? HipsCm);
+public record CreatePersonalWorkoutRangeDto(DateTime StartDateTime, DateTime EndDateTime);
+public record TrainerProgressUpdateItemDto(int? TrackerId, string? Title, string? Unit, double Value);
+public record TrainerUpdateProgressDto(Guid ClientId, List<TrainerProgressUpdateItemDto> Updates);
 
 
 // Прогресс
@@ -92,3 +93,28 @@ public record AiChatMessageDto(string Role, string Content);
 public record AiTrainerChatRequestDto(string Message, List<AiChatMessageDto>? History);
 public record AiTrainerChatResponseDto(string Reply, int RemainingMessages);
 public record AiTrainerStatusDto(bool HasActiveMembership, int RemainingMessages, bool CanUseChat, DateTime? MembershipExpiresAt);
+
+// Audit logs
+public record AuditLogListItemDto(
+    long Id,
+    DateTime Timestamp,
+    Guid? UserId,
+    string UserDisplayName,
+    string EntityName,
+    string Action);
+
+public record AuditLogDetailsDto(
+    long Id,
+    DateTime Timestamp,
+    Guid? UserId,
+    string UserDisplayName,
+    string EntityName,
+    string Action,
+    string? OldValues,
+    string? NewValues);
+
+public record AdminOverviewStatsDto(
+    int ClientsCount,
+    int TrainersCount,
+    int ManagersCount,
+    int AuditLogsLast24hCount);

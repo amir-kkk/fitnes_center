@@ -12,7 +12,6 @@ namespace FitnessCenter.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -25,6 +24,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("users")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<PagedResult<UserDto>>> GetUsers(
         [FromQuery] int page = 1, [FromQuery] int pageSize = 10,
         [FromQuery] string? search = null)
@@ -47,14 +47,32 @@ public class AdminController : ControllerBase
         return Ok(new PagedResult<UserDto>(items, total, page, pageSize));
     }
 
+    [HttpGet("overview-stats")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<AdminOverviewStatsDto>> GetOverviewStats()
+    {
+        var clientsCount = await _db.Users.CountAsync(u => u.Role == "User" || u.Role == "Client");
+        var trainersCount = await _db.Users.CountAsync(u => u.Role == "Trainer");
+        var managersCount = await _db.Users.CountAsync(u => u.Role == "Manager");
+        var from = DateTime.UtcNow.AddHours(-24);
+        var auditLogsLast24hCount = await _db.AuditLogs.CountAsync(a => a.Timestamp >= from);
+
+        return Ok(new AdminOverviewStatsDto(
+            clientsCount,
+            trainersCount,
+            managersCount,
+            auditLogsLast24hCount));
+    }
+
 
     /// Смена роли пользователя
 
     [HttpPut("users/{id}/role")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateRole(Guid id, [FromBody] string role)
     {
-        if (role != "Admin" && role != "User" && role != "Trainer")
-            return BadRequest("Допустимые роли: Admin, User, Trainer");
+        if (role != "Admin" && role != "User" && role != "Trainer" && role != "Manager")
+            return BadRequest("Допустимые роли: Admin, User, Trainer, Manager");
 
         var user = await _db.Users.FindAsync(id);
         if (user == null) return NotFound();
@@ -68,6 +86,7 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("personal-workouts")]
+    [Authorize(Roles = "Manager")]
     public async Task<ActionResult<PagedResult<PersonalWorkoutSlotDto>>> GetPersonalWorkouts(
         [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
@@ -75,9 +94,59 @@ public class AdminController : ControllerBase
     }
 
     [HttpDelete("personal-workouts/{slotId:int}/cancel")]
+    [Authorize(Roles = "Manager")]
     public async Task<IActionResult> CancelPersonalWorkout(int slotId)
     {
         await _personalWorkoutService.CancelByAdminAsync(slotId);
         return NoContent();
+    }
+
+    [HttpGet("audit-logs")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<PagedResult<AuditLogListItemDto>>> GetAuditLogs(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var query = _db.AuditLogs
+            .AsNoTracking()
+            .Include(a => a.User)
+            .OrderByDescending(a => a.Timestamp);
+
+        var total = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a => new AuditLogListItemDto(
+                a.Id,
+                a.Timestamp,
+                a.UserId,
+                a.User != null ? $"{a.User.FullName} ({a.User.Email})" : "System",
+                a.EntityName,
+                a.Action))
+            .ToListAsync();
+
+        return Ok(new PagedResult<AuditLogListItemDto>(items, total, page, pageSize));
+    }
+
+    [HttpGet("audit-logs/{id:long}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<AuditLogDetailsDto>> GetAuditLogById(long id)
+    {
+        var log = await _db.AuditLogs
+            .AsNoTracking()
+            .Include(a => a.User)
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (log == null) return NotFound();
+
+        return Ok(new AuditLogDetailsDto(
+            log.Id,
+            log.Timestamp,
+            log.UserId,
+            log.User != null ? $"{log.User.FullName} ({log.User.Email})" : "System",
+            log.EntityName,
+            log.Action,
+            log.OldValues,
+            log.NewValues));
     }
 }

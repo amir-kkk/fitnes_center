@@ -18,7 +18,7 @@ public class CategoriesController : ControllerBase
         return Ok(await _svc.GetCategoriesAsync());
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Manager")]
     [HttpPost]
     public async Task<ActionResult<CategoryDto>> Create(CreateCategoryDto dto)
     {

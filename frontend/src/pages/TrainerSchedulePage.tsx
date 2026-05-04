@@ -18,7 +18,8 @@ export default function TrainerSchedulePage() {
   const [history, setHistory] = useState(false);
   const [workouts, setWorkouts] = useState<PersonalWorkoutSlot[]>([]);
   const [slotDate, setSlotDate] = useState(dayjs());
-  const [slotTime, setSlotTime] = useState('09:00');
+  const [slotStartTime, setSlotStartTime] = useState('09:00');
+  const [slotEndTime, setSlotEndTime] = useState('18:00');
 
   const fetchWorkouts = async (historyMode: boolean) => {
     setLoading(true);
@@ -37,19 +38,32 @@ export default function TrainerSchedulePage() {
     fetchWorkouts(history);
   }, [history]);
 
-  const handleCreateSlot = async () => {
-    const dateTime = slotDate
-      .hour(Number(slotTime.split(':')[0]))
-      .minute(Number(slotTime.split(':')[1]))
+  const handleCreateSlotsRange = async () => {
+    const startDateTime = slotDate
+      .hour(Number(slotStartTime.split(':')[0]))
+      .minute(Number(slotStartTime.split(':')[1]))
+      .second(0)
+      .millisecond(0);
+    const endDateTime = slotDate
+      .hour(Number(slotEndTime.split(':')[0]))
+      .minute(Number(slotEndTime.split(':')[1]))
       .second(0)
       .millisecond(0);
 
+    if (!endDateTime.isAfter(startDateTime)) {
+      notify('Конец рабочего времени должен быть позже начала', 'warning');
+      return;
+    }
+
     try {
-      await api.post('/trainer/slots', { dateTime: dateTime.toISOString() });
-      notify('Слот успешно добавлен', 'success');
+      await api.post('/trainer/slots/range', {
+        startDateTime: startDateTime.toISOString(),
+        endDateTime: endDateTime.toISOString(),
+      });
+      notify('Рабочий интервал успешно добавлен', 'success');
       if (!history) fetchWorkouts(false);
     } catch (err: any) {
-      notify(err.response?.data?.detail || 'Не удалось создать слот', 'error');
+      notify(err.response?.data?.detail || 'Не удалось создать интервал', 'error');
     }
   };
 
@@ -64,7 +78,7 @@ export default function TrainerSchedulePage() {
       {!history && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="h6" mb={1}>Открыть новый слот</Typography>
+            <Typography variant="h6" mb={1}>Открыть рабочий интервал</Typography>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateCalendar value={slotDate} onChange={(v) => v && setSlotDate(v)} />
@@ -72,13 +86,20 @@ export default function TrainerSchedulePage() {
               <Stack spacing={2} mt={{ xs: 0, md: 2 }}>
                 <TextField
                   type="time"
-                  label="Время"
-                  value={slotTime}
-                  onChange={(e) => setSlotTime(e.target.value)}
+                  label="Начало"
+                  value={slotStartTime}
+                  onChange={(e) => setSlotStartTime(e.target.value)}
                   InputLabelProps={{ shrink: true }}
                 />
-                <Button variant="contained" onClick={handleCreateSlot}>
-                  Добавить слот
+                <TextField
+                  type="time"
+                  label="Конец"
+                  value={slotEndTime}
+                  onChange={(e) => setSlotEndTime(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <Button variant="contained" onClick={handleCreateSlotsRange}>
+                  Добавить рабочее время
                 </Button>
               </Stack>
             </Stack>
