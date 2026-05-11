@@ -41,8 +41,15 @@ public class BookingService
     }
 
     public async Task<BookingDto> CreateAsync(Guid userId, CreateBookingDto dto)
+        => await CreateInternalAsync(userId, dto, checkMembership: true);
+
+    public async Task<BookingDto> CreateForUserByManagerAsync(Guid userId, CreateBookingDto dto)
+        => await CreateInternalAsync(userId, dto, checkMembership: true);
+
+    private async Task<BookingDto> CreateInternalAsync(Guid userId, CreateBookingDto dto, bool checkMembership)
     {
-        await EnsurePaidMembershipAsync(userId);
+        if (checkMembership)
+            await EnsurePaidMembershipAsync(userId);
 
         var training = await _db.Trainings.Include(t => t.Bookings).Include(t => t.Trainer)
             .FirstOrDefaultAsync(t => t.Id == dto.TrainingId)

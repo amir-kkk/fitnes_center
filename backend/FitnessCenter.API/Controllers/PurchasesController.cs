@@ -32,9 +32,10 @@ public class PurchasesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<PagedResult<PurchaseDto>>> GetAll(
         [FromQuery] int page = 1, [FromQuery] int pageSize = 10,
-        [FromQuery] string? search = null)
+        [FromQuery] string? search = null,
+        [FromQuery] bool onlyReserved = false)
     {
-        var result = await _svc.GetAllAsync(page, pageSize, search);
+        var result = await _svc.GetAllAsync(page, pageSize, search, onlyReserved);
         return Ok(result);
     }
 
@@ -46,12 +47,13 @@ public class PurchasesController : ControllerBase
     }
 
     /// <summary>
-    /// Имитация оплаты
+    /// Подтверждение оплаты менеджером
     /// </summary>
+    [Authorize(Roles = "Manager")]
     [HttpPost("{id}/pay")]
     public async Task<ActionResult<PurchaseDto>> Pay(int id)
     {
-        var result = await _svc.PayAsync(id, GetUserId());
+        var result = await _svc.ConfirmPaymentAsync(id);
         return Ok(result);
     }
 

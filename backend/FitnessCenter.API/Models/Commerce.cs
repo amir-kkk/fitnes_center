@@ -1,6 +1,10 @@
 namespace FitnessCenter.API.Models;
 
-public enum PurchaseStatus { Pending, Paid }
+public enum PurchaseStatus
+{
+    Reserved = 0,
+    Paid = 1
+}
 public enum BookingStatus { Active, Cancelled }
 
 /// <summary>
@@ -12,7 +16,7 @@ public class Purchase
     public Guid UserId { get; set; }
     public int MembershipId { get; set; }
     public decimal PriceAtPurchase { get; set; }
-    public PurchaseStatus Status { get; set; } = PurchaseStatus.Pending;
+    public PurchaseStatus Status { get; set; } = PurchaseStatus.Reserved;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public User User { get; set; } = null!;

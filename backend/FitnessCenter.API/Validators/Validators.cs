@@ -12,6 +12,11 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
         RuleFor(x => x.Email).NotEmpty().EmailAddress().WithMessage("Некорректный email");
         RuleFor(x => x.Password).NotEmpty().MinimumLength(6).WithMessage("Пароль должен быть не менее 6 символов");
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(200).WithMessage("Укажите имя");
+        RuleFor(x => x.PhoneNumber)
+            .MaximumLength(20)
+            .Matches(@"^\+?[0-9\-\s\(\)]*$")
+            .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber))
+            .WithMessage("Некорректный номер телефона");
     }
 }
 
@@ -151,5 +156,27 @@ public class UpdateCoachDtoValidator : AbstractValidator<UpdateCoachDto>
     {
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
         RuleFor(x => x.TrainerRank).InclusiveBetween(1, 5);
+    }
+}
+
+public class CreateManagedUserDtoValidator : AbstractValidator<CreateManagedUserDto>
+{
+    public CreateManagedUserDtoValidator()
+    {
+        RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+        RuleFor(x => x.Password).NotEmpty().MinimumLength(6);
+        RuleFor(x => x.PhoneNumber)
+            .MaximumLength(20)
+            .Matches(@"^\+?[0-9\-\s\(\)]*$")
+            .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
+    }
+}
+
+public class AdminSetUserPasswordDtoValidator : AbstractValidator<AdminSetUserPasswordDto>
+{
+    public AdminSetUserPasswordDtoValidator()
+    {
+        RuleFor(x => x.Password).NotEmpty().MinimumLength(6);
     }
 }

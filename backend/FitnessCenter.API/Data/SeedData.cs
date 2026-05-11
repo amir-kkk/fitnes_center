@@ -18,6 +18,8 @@ public static class SeedData
                 ADD COLUMN IF NOT EXISTS "PhotoUrl" text NULL;
             ALTER TABLE "Users"
                 ADD COLUMN IF NOT EXISTS "TrainerRank" integer NULL;
+            ALTER TABLE "Users"
+                ADD COLUMN IF NOT EXISTS "PhoneNumber" character varying(20) NULL;
 
             ALTER TABLE "Trainings"
                 ADD COLUMN IF NOT EXISTS "TrainerId" uuid NULL;
@@ -188,7 +190,8 @@ public static class SeedData
                 "ClientId" uuid NULL,
                 "DateTime" timestamp with time zone NOT NULL,
                 "Price" numeric(10,2) NOT NULL,
-                "IsBooked" boolean NOT NULL DEFAULT FALSE,
+                "Status" integer NOT NULL DEFAULT 0,
+                "NotCompletedReason" character varying(500) NULL,
                 CONSTRAINT "FK_PersonalWorkouts_Users_TrainerId"
                     FOREIGN KEY ("TrainerId") REFERENCES "Users" ("Id") ON DELETE CASCADE,
                 CONSTRAINT "FK_PersonalWorkouts_Users_ClientId"
@@ -200,6 +203,27 @@ public static class SeedData
 
             CREATE INDEX IF NOT EXISTS "IX_PersonalWorkouts_ClientId"
                 ON "PersonalWorkouts" ("ClientId");
+            """);
+
+        await context.Database.ExecuteSqlRawAsync("""
+            ALTER TABLE "PersonalWorkouts"
+                ADD COLUMN IF NOT EXISTS "Status" integer NOT NULL DEFAULT 0;
+            ALTER TABLE "PersonalWorkouts"
+                ADD COLUMN IF NOT EXISTS "NotCompletedReason" character varying(500) NULL;
+
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'PersonalWorkouts'
+                      AND column_name = 'IsBooked'
+                ) THEN
+                    EXECUTE 'UPDATE "PersonalWorkouts" SET "Status" = CASE WHEN "IsBooked" THEN 1 ELSE 0 END WHERE "Status" = 0';
+                END IF;
+            END
+            $$;
             """);
 
         await context.Database.ExecuteSqlRawAsync("""
@@ -276,28 +300,28 @@ public static class SeedData
                         TrainerId = trainer.Id,
                         DateTime = tomorrow.AddHours(9),
                         Price = 1000m + ((Math.Clamp(trainer.TrainerRank ?? 1, 1, 5) - 1) * 500m),
-                        IsBooked = false
+                        Status = PersonalWorkoutStatus.Available
                     },
                     new PersonalWorkout
                     {
                         TrainerId = trainer.Id,
                         DateTime = tomorrow.AddHours(11),
                         Price = 1000m + ((Math.Clamp(trainer.TrainerRank ?? 1, 1, 5) - 1) * 500m),
-                        IsBooked = false
+                        Status = PersonalWorkoutStatus.Available
                     },
                     new PersonalWorkout
                     {
                         TrainerId = trainer.Id,
                         DateTime = tomorrow.AddHours(18),
                         Price = 1000m + ((Math.Clamp(trainer.TrainerRank ?? 1, 1, 5) - 1) * 500m),
-                        IsBooked = false
+                        Status = PersonalWorkoutStatus.Available
                     },
                     new PersonalWorkout
                     {
                         TrainerId = trainer.Id,
                         DateTime = DateTime.UtcNow.AddDays(-2),
                         Price = 1200m,
-                        IsBooked = false
+                        Status = PersonalWorkoutStatus.Available
                     }
                 );
             }

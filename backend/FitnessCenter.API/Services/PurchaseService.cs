@@ -32,12 +32,17 @@ public class PurchaseService
     /// <summary>
     /// Все покупки — для администратора
     /// </summary>
-    public async Task<PagedResult<PurchaseDto>> GetAllAsync(int page, int pageSize, string? search)
+    public async Task<PagedResult<PurchaseDto>> GetAllAsync(int page, int pageSize, string? search, bool onlyReserved)
     {
         var query = _db.Purchases.Include(p => p.Membership).Include(p => p.User).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(p => p.User.Email.ToLower().Contains(search.ToLower()));
+            query = query.Where(p =>
+                p.User.Email.ToLower().Contains(search.ToLower()) ||
+                p.User.FullName.ToLower().Contains(search.ToLower()));
+
+        if (onlyReserved)
+            query = query.Where(p => p.Status == PurchaseStatus.Reserved);
 
         var total = await query.CountAsync();
         var items = await query
@@ -50,8 +55,11 @@ public class PurchaseService
     }
 
     public async Task<PurchaseDto> CreateAsync(Guid userId, CreatePurchaseDto dto)
+        => await CreateForUserAsync(userId, dto.MembershipId, markAsPaid: false);
+
+    public async Task<PurchaseDto> CreateForUserAsync(Guid userId, int membershipId, bool markAsPaid)
     {
-        var membership = await _db.Memberships.FindAsync(dto.MembershipId)
+        var membership = await _db.Memberships.FindAsync(membershipId)
             ?? throw new KeyNotFoundException("Абонемент не найден");
 
         var purchase = new Purchase
@@ -59,7 +67,7 @@ public class PurchaseService
             UserId = userId,
             MembershipId = membership.Id,
             PriceAtPurchase = membership.Price,
-            Status = PurchaseStatus.Pending,
+            Status = markAsPaid ? PurchaseStatus.Paid : PurchaseStatus.Reserved,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -72,9 +80,9 @@ public class PurchaseService
     /// <summary>
     /// Имитация оплаты — переводит статус в Paid
     /// </summary>
-    public async Task<PurchaseDto> PayAsync(int id, Guid userId)
+    public async Task<PurchaseDto> ConfirmPaymentAsync(int id)
     {
-        var purchase = await _db.Purchases.FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId)
+        var purchase = await _db.Purchases.FirstOrDefaultAsync(p => p.Id == id)
             ?? throw new KeyNotFoundException("Покупка не найдена");
 
         if (purchase.Status == PurchaseStatus.Paid)
@@ -95,5 +103,6 @@ public class PurchaseService
 
     private static PurchaseDto Map(Purchase p) =>
         new(p.Id, p.UserId, p.User.Email, p.MembershipId,
-            p.Membership.Name, p.PriceAtPurchase, p.Status.ToString(), p.CreatedAt);
+            p.Membership.Name, p.PriceAtPurchase, p.Status.ToString(), p.CreatedAt,
+            p.User.FullName, p.User.PhoneNumber);
 }

@@ -31,6 +31,7 @@ public class AppDbContext : DbContext
         {
             e.HasIndex(u => u.Email).IsUnique();
             e.Property(u => u.Role).HasMaxLength(20);
+            e.Property(u => u.PhoneNumber).HasMaxLength(20);
             e.Property(u => u.PhotoUrl).HasMaxLength(500);
         });
 
@@ -85,6 +86,7 @@ public class AppDbContext : DbContext
         {
             e.HasIndex(pw => new { pw.TrainerId, pw.DateTime }).IsUnique();
             e.Property(pw => pw.Price).HasColumnType("decimal(10,2)");
+            e.Property(pw => pw.NotCompletedReason).HasMaxLength(500);
             e.HasOne(pw => pw.Trainer)
                 .WithMany(u => u.TrainerPersonalWorkouts)
                 .HasForeignKey(pw => pw.TrainerId)

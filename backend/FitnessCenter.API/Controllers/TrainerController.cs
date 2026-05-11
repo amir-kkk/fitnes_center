@@ -51,6 +51,12 @@ public class TrainerController : ControllerBase
         return Ok(await _svc.UpdateClientProgressAsync(GetUserId(), dto));
     }
 
+    [HttpPost("workouts/{slotId:int}/result")]
+    public async Task<ActionResult<PersonalWorkoutSlotDto>> MarkWorkoutResult(int slotId, TrainerWorkoutResultDto dto)
+    {
+        return Ok(await _svc.MarkWorkoutResultByTrainerAsync(GetUserId(), slotId, dto));
+    }
+
     private Guid GetUserId() =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub")!);

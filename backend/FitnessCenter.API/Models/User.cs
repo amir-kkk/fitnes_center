@@ -10,6 +10,7 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     public string Role { get; set; } = "User";
     public string FullName { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
     public string? PhotoUrl { get; set; }
     public int? TrainerRank { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

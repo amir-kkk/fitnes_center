@@ -2,12 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { DataGrid, GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import {
   Typography, Box, Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, Stack,
+  DialogActions, TextField, Stack, Autocomplete,
 } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
 import api from '../../api/client';
 import { useNotificationStore } from '../../stores/notificationStore';
-import type { Membership, PagedResult } from '../../types';
+import type { ClientListItem, Membership, PagedResult } from '../../types';
 
 const empty = { name: '', description: '', price: 0, durationDays: 30, options: '' };
 
@@ -20,6 +20,10 @@ export default function AdminMembershipsPage() {
   const [dlgOpen, setDlgOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(empty);
+  const [users, setUsers] = useState<ClientListItem[]>([]);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignMembershipId, setAssignMembershipId] = useState<number | null>(null);
+  const [assignUser, setAssignUser] = useState<ClientListItem | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -32,6 +36,11 @@ export default function AdminMembershipsPage() {
   }, [pm, search]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    api.get<PagedResult<ClientListItem>>('/admin/clients', { params: { page: 1, pageSize: 500, search: '' } })
+      .then(({ data }) => setUsers(data.items))
+      .catch(() => notify('Ошибка загрузки пользователей', 'error'));
+  }, [notify]);
 
   const openCreate = () => { setEditId(null); setForm(empty); setDlgOpen(true); };
   const openEdit = (m: Membership) => {
@@ -64,27 +73,53 @@ export default function AdminMembershipsPage() {
     } catch { notify('Ошибка удаления', 'error'); }
   };
 
+  const openAssign = (membershipId: number) => {
+    setAssignMembershipId(membershipId);
+    setAssignUser(null);
+    setAssignOpen(true);
+  };
+
+  const handleAssign = async () => {
+    if (!assignUser || !assignMembershipId) {
+      notify('Выберите клиента', 'warning');
+      return;
+    }
+    try {
+      await api.post('/admin/memberships/assign', {
+        userId: assignUser.id,
+        membershipId: assignMembershipId,
+      });
+      notify('Абонемент забронирован для клиента', 'success');
+      setAssignOpen(false);
+    } catch (err: any) {
+      notify(err.response?.data?.detail || 'Ошибка назначения абонемента', 'error');
+    }
+  };
+
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 60 },
     { field: 'name', headerName: 'Название', flex: 1 },
     { field: 'price', headerName: 'Цена ₽', width: 120, type: 'number' },
     { field: 'durationDays', headerName: 'Дней', width: 80, type: 'number' },
     {
-      field: 'actions', headerName: 'Действия', width: 160, sortable: false,
+      field: 'actions', 
+      headerName: 'Действия', 
+      width: 300, 
+      sortable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
           <Button size="small" startIcon={<Edit />} onClick={() => openEdit(params.row)}>Ред.</Button>
-          <Button size="small" color="error" startIcon={<Delete />}
-            onClick={() => handleDelete(params.row.id)}>Уд.</Button>
+          <Button size="small" onClick={() => openAssign(params.row.id)}>Выдать</Button>
+          <Button size="small" color="error" startIcon={<Delete />} onClick={() => handleDelete(params.row.id)}>Уд.</Button>
         </Stack>
       ),
-    },
+    }
   ];
 
   return (
     <>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5">Абонементы</Typography>
+        <Typography variant="h5">Каталог абонементов</Typography>
         <Button variant="contained" startIcon={<Add />} onClick={openCreate}>Создать</Button>
       </Box>
       <TextField size="small" placeholder="Поиск" sx={{ mb: 2, width: 320 }}
@@ -114,6 +149,25 @@ export default function AdminMembershipsPage() {
         <DialogActions>
           <Button onClick={() => setDlgOpen(false)}>Отмена</Button>
           <Button variant="contained" onClick={handleSave}>Сохранить</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={assignOpen} onClose={() => setAssignOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Выдать абонемент клиенту</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} mt={1}>
+            <Autocomplete
+              options={users}
+              value={assignUser}
+              onChange={(_, v) => setAssignUser(v)}
+              getOptionLabel={(o) => `${o.fullName} (${o.email})`}
+              renderInput={(params) => <TextField {...params} label="Клиент" />}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAssignOpen(false)}>Отмена</Button>
+          <Button variant="contained" onClick={handleAssign}>Выдать</Button>
         </DialogActions>
       </Dialog>
     </>

@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { Box, TextField, Button, Typography, Paper, Alert } from '@mui/material';
 import { useAuthStore } from '../stores/authStore';
+import { normalizePhoneInput } from '../utils/phone';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const register = useAuthStore((s) => s.register);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,7 +19,7 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      await register(email, password, fullName);
+      await register(email, password, fullName, normalizePhoneInput(phoneNumber));
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.detail || err.response?.data?.errors
@@ -38,6 +40,14 @@ export default function RegisterPage() {
             value={fullName} onChange={(e) => setFullName(e.target.value)} sx={{ mb: 2 }} />
           <TextField label="Email" type="email" fullWidth required
             value={email} onChange={(e) => setEmail(e.target.value)} sx={{ mb: 2 }} />
+          <TextField
+            label="Номер телефона"
+            fullWidth
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            placeholder="+7XXXXXXXXXX"
+            sx={{ mb: 2 }}
+          />
           <TextField label="Пароль" type="password" fullWidth required
             value={password} onChange={(e) => setPassword(e.target.value)}
             helperText="Минимум 6 символов" sx={{ mb: 3 }} />

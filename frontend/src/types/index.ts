@@ -5,6 +5,7 @@ export interface User {
   email: string;
   fullName: string;
   role: string;
+  phoneNumber: string | null;
   photoUrl: string | null;
   trainerRank: number | null;
   createdAt: string;
@@ -47,6 +48,7 @@ export interface Coach {
   id: string;
   fullName: string;
   email: string;
+  phoneNumber: string | null;
   photoUrl: string | null;
   trainerRank: number;
 }
@@ -55,6 +57,8 @@ export interface Purchase {
   id: number;
   userId: string;
   userEmail: string;
+  userFullName: string;
+  userPhone: string | null;
   membershipId: number;
   membershipName: string;
   priceAtPurchase: number;
@@ -93,6 +97,7 @@ export interface TrainerListItem {
   id: string;
   fullName: string;
   email: string;
+  phoneNumber: string | null;
   photoUrl: string | null;
   trainerRank: number;
 }
@@ -101,11 +106,14 @@ export interface PersonalWorkoutSlot {
   id: number;
   trainerId: string;
   trainerName: string;
+  trainerPhone: string | null;
   clientId: string | null;
   clientName: string | null;
+  clientPhone: string | null;
   dateTime: string;
   price: number;
-  isBooked: boolean;
+  status: 'Available' | 'BookedUnpaid' | 'Paid' | 'Completed' | 'NotCompleted' | string;
+  notCompletedReason: string | null;
 }
 
 export interface TrainerProgressUpdateItemPayload {
@@ -163,4 +171,13 @@ export interface AdminOverviewStats {
   trainersCount: number;
   managersCount: number;
   auditLogsLast24hCount: number;
+}
+
+export interface ClientListItem {
+  id: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string | null;
+  membershipStatus: 'None' | 'Reserved' | 'Paid' | string;
+  membershipName: string | null;
 }

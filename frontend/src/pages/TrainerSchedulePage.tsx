@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import {
   Box, Card, CardContent, Chip, CircularProgress, Stack, Tab, Tabs, Typography, Button, TextField,
+  Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -10,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import { useNotificationStore } from '../stores/notificationStore';
 import type { PersonalWorkoutSlot } from '../types';
+import { formatPhone } from '../utils/phone';
 
 export default function TrainerSchedulePage() {
   const navigate = useNavigate();
@@ -20,6 +22,9 @@ export default function TrainerSchedulePage() {
   const [slotDate, setSlotDate] = useState(dayjs());
   const [slotStartTime, setSlotStartTime] = useState('09:00');
   const [slotEndTime, setSlotEndTime] = useState('18:00');
+  const [markingSlotId, setMarkingSlotId] = useState<number | null>(null);
+  const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
+  const [notConductedReason, setNotConductedReason] = useState('');
 
   const fetchWorkouts = async (historyMode: boolean) => {
     setLoading(true);
@@ -65,6 +70,45 @@ export default function TrainerSchedulePage() {
     } catch (err: any) {
       notify(err.response?.data?.detail || 'Не удалось создать интервал', 'error');
     }
+  };
+
+  const handleMarkConducted = async (slotId: number, isConducted: boolean, reason?: string) => {
+    try {
+      await api.post(`/trainer/workouts/${slotId}/result`, {
+        isConducted,
+        notConductedReason: reason ?? null,
+      });
+      notify(isConducted ? 'Тренировка отмечена как проведенная' : 'Тренировка отмечена как не проведенная', 'success');
+      fetchWorkouts(history);
+    } catch (err: any) {
+      notify(err.response?.data?.detail || 'Не удалось обновить статус тренировки', 'error');
+    }
+  };
+
+  const openNotConductedDialog = (slotId: number) => {
+    setMarkingSlotId(slotId);
+    setNotConductedReason('');
+    setReasonDialogOpen(true);
+  };
+
+  const submitNotConducted = async () => {
+    if (!markingSlotId) return;
+    if (!notConductedReason.trim()) {
+      notify('Укажите причину непроведения', 'warning');
+      return;
+    }
+    await handleMarkConducted(markingSlotId, false, notConductedReason.trim());
+    setReasonDialogOpen(false);
+    setMarkingSlotId(null);
+  };
+
+  const statusLabel = (status: string) => {
+    if (status === 'Available') return 'Свободный слот';
+    if (status === 'BookedUnpaid') return 'Записан, не оплачено';
+    if (status === 'Paid') return 'Оплачено';
+    if (status === 'Completed') return 'Проведена';
+    if (status === 'NotCompleted') return 'Не проведена';
+    return status;
   };
 
   return (
@@ -127,9 +171,27 @@ export default function TrainerSchedulePage() {
                     <Typography mt={0.5}>
                       Клиент: {workout.clientName || 'Не забронировано'}
                     </Typography>
+                    {workout.clientName && (
+                      <Typography variant="body2" color="text.secondary">
+                        Телефон клиента: {formatPhone(workout.clientPhone)}
+                      </Typography>
+                    )}
+                    {workout.status === 'NotCompleted' && workout.notCompletedReason && (
+                      <Typography variant="body2" color="error.main">
+                        Причина: {workout.notCompletedReason}
+                      </Typography>
+                    )}
                   </Box>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <Chip label={workout.isBooked ? 'Забронировано' : 'Свободный слот'} color={workout.isBooked ? 'primary' : 'success'} />
+                    <Chip
+                      label={statusLabel(workout.status)}
+                      color={
+                        workout.status === 'Completed' ? 'success'
+                          : workout.status === 'NotCompleted' ? 'error'
+                            : workout.status === 'Available' ? 'success'
+                              : 'primary'
+                      }
+                    />
                     {workout.clientId && (
                       <Button
                         variant="outlined"
@@ -138,6 +200,24 @@ export default function TrainerSchedulePage() {
                         Прогресс клиента
                       </Button>
                     )}
+                    {workout.status === 'Paid' && dayjs().isAfter(dayjs(workout.dateTime).add(1, 'hour')) && (
+                      <>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          onClick={() => handleMarkConducted(workout.id, true)}
+                        >
+                          Тренировка проведена
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          onClick={() => openNotConductedDialog(workout.id)}
+                        >
+                          Не проведена
+                        </Button>
+                      </>
+                    )}
                   </Stack>
                 </Stack>
               </CardContent>
@@ -145,6 +225,25 @@ export default function TrainerSchedulePage() {
           ))}
         </Stack>
       )}
+
+      <Dialog open={reasonDialogOpen} onClose={() => setReasonDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Причина непроведения</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            margin="dense"
+            label="Причина"
+            value={notConductedReason}
+            onChange={(e) => setNotConductedReason(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReasonDialogOpen(false)}>Отмена</Button>
+          <Button color="error" variant="contained" onClick={submitNotConducted}>Сохранить</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

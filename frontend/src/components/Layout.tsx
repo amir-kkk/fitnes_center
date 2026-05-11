@@ -12,6 +12,7 @@ export default function Layout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const isManager = user?.role === 'Manager';
 
   const handleLogout = () => {
     logout();
@@ -30,27 +31,27 @@ export default function Layout() {
           </Typography>
 
           <Box sx={{ flexGrow: 1, display: 'flex', gap: 0.5 }}>
-            {user?.role !== 'Trainer' && (
+            {!isManager && user?.role !== 'Trainer' && (
               <Button color="inherit" component={RouterLink} to="/memberships"
                 sx={{ borderRadius: 20 }}>Абонементы</Button>
             )}
-            <Button color="inherit" component={RouterLink} to="/trainings"
-              sx={{ borderRadius: 20 }}>Расписание</Button>
-            {user && (
+            {!isManager && <Button color="inherit" component={RouterLink} to="/trainings"
+              sx={{ borderRadius: 20 }}>Расписание</Button>}
+            {!isManager && user && (
               <Button color="inherit" component={RouterLink} to="/personal-workouts"
                 sx={{ borderRadius: 20 }}>
                 Персональные тренировки
               </Button>
             )}
-            {user && user.role !== 'Trainer' && <Button color="inherit" component={RouterLink} to="/progress"
+            {!isManager && user && user.role !== 'Trainer' && <Button color="inherit" component={RouterLink} to="/progress"
               sx={{ borderRadius: 20 }}>Прогресс</Button>}
-            {user?.role === 'Trainer' && (
+            {!isManager && user?.role === 'Trainer' && (
               <Button color="inherit" component={RouterLink} to="/trainer/schedule"
                 sx={{ borderRadius: 20 }}>
                 Мое расписание
               </Button>
             )}
-            {user && <Button color="inherit" component={RouterLink} to="/profile"
+            {!isManager && user && <Button color="inherit" component={RouterLink} to="/profile"
               sx={{ borderRadius: 20 }}>Кабинет</Button>}
             {(user?.role === 'Admin' || user?.role === 'Manager') && (
               <Chip label={user.role === 'Manager' ? 'Менеджер' : 'Админ'} size="small" clickable

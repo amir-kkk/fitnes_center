@@ -9,6 +9,7 @@ import api from '../api/client';
 import { useAuthStore } from '../stores/authStore';
 import { useNotificationStore } from '../stores/notificationStore';
 import type { Purchase, Booking, PagedResult, PersonalWorkoutSlot } from '../types';
+import { formatPhone } from '../utils/phone';
 
 export default function ProfilePage() {
   const { user, loadUser } = useAuthStore();
@@ -87,7 +88,7 @@ export default function ProfilePage() {
     <>
       <Typography variant="h4" mb={1}>Личный кабинет</Typography>
       <Typography color="text.secondary" mb={4}>
-        {user?.fullName} — {user?.email}
+        {user?.fullName} — {user?.email} — {formatPhone(user?.phoneNumber)}
       </Typography>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={4} alignItems={{ xs: 'start', sm: 'center' }}>
         <Avatar src={user?.photoUrl || undefined} sx={{ width: 80, height: 80, bgcolor: '#D9D9D9', fontSize: 30 }}>
@@ -121,7 +122,7 @@ export default function ProfilePage() {
                         secondary={`${p.priceAtPurchase.toLocaleString()} ₽ — ${dayjs(p.createdAt).format('DD.MM.YYYY')}`}
                       />
                       <Chip size="small"
-                        label={p.status === 'Paid' ? 'Оплачен' : 'Ожидание'}
+                        label={p.status === 'Paid' ? 'Оплачен' : 'Забронирован'}
                         color={p.status === 'Paid' ? 'success' : 'warning'} />
                     </ListItem>
                   ))}
@@ -186,9 +187,20 @@ export default function ProfilePage() {
                     >
                       <ListItemText
                         primary={`Тренер: ${b.trainerName}`}
-                        secondary={dayjs(b.dateTime).format('DD.MM.YYYY HH:mm')}
+                        secondary={`${dayjs(b.dateTime).format('DD.MM.YYYY HH:mm')} • Телефон тренера: ${formatPhone(b.trainerPhone)}`}
                       />
-                      <Chip size="small" label="Активна" color="primary" sx={{ mr: 1 }} />
+                      <Chip
+                        size="small"
+                        label={
+                          b.status === 'BookedUnpaid' ? 'Записан, не оплачено'
+                            : b.status === 'Paid' ? 'Оплачено'
+                              : b.status === 'Completed' ? 'Проведена'
+                                : b.status === 'NotCompleted' ? 'Не проведена'
+                                  : b.status
+                        }
+                        color={b.status === 'Completed' ? 'success' : b.status === 'NotCompleted' ? 'error' : 'primary'}
+                        sx={{ mr: 1 }}
+                      />
                     </ListItem>
                   ))}
                 </List>

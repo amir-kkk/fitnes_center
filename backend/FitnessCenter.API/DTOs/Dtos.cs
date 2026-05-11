@@ -7,12 +7,12 @@ public record PagedResult<T>(List<T> Items, int TotalCount, int Page, int PageSi
 
 // Аутентификация
 
-public record RegisterDto(string Email, string Password, string FullName);
+public record RegisterDto(string Email, string Password, string FullName, string? PhoneNumber);
 public record LoginDto(string Email, string Password);
 public record AuthResponse(string Token, UserDto User);
 public record UserDto(
     Guid Id, string Email, string FullName, string Role,
-    string? PhotoUrl, int? TrainerRank, DateTime CreatedAt);
+    string? PhoneNumber, string? PhotoUrl, int? TrainerRank, DateTime CreatedAt);
 
 // Абонементы
 
@@ -45,7 +45,7 @@ public record UpdateTrainingDto(
     DateTime StartTime, int MaxParticipants);
 
 public record CategoryDto(int Id, string Name);
-public record CoachDto(Guid Id, string FullName, string Email, string? PhotoUrl, int TrainerRank);
+public record CoachDto(Guid Id, string FullName, string Email, string? PhoneNumber, string? PhotoUrl, int TrainerRank);
 public record CreateCategoryDto(string Name);
 public record UpdateCoachDto(string FullName, int TrainerRank);
 
@@ -53,7 +53,8 @@ public record UpdateCoachDto(string FullName, int TrainerRank);
 
 public record PurchaseDto(
     int Id, Guid UserId, string UserEmail, int MembershipId,
-    string MembershipName, decimal PriceAtPurchase, string Status, DateTime CreatedAt);
+    string MembershipName, decimal PriceAtPurchase, string Status, DateTime CreatedAt,
+    string UserFullName, string? UserPhone);
 
 public record CreatePurchaseDto(int MembershipId);
 
@@ -67,12 +68,15 @@ public record CreateBookingDto(int TrainingId);
 
 // Персональные тренировки
 
-public record TrainerListItemDto(Guid Id, string FullName, string Email, string? PhotoUrl, int TrainerRank);
+public record TrainerListItemDto(Guid Id, string FullName, string Email, string? PhoneNumber, string? PhotoUrl, int TrainerRank);
 public record PersonalWorkoutSlotDto(
-    int Id, Guid TrainerId, string TrainerName, Guid? ClientId, string? ClientName,
-    DateTime DateTime, decimal Price, bool IsBooked);
+    int Id, Guid TrainerId, string TrainerName, string? TrainerPhone,
+    Guid? ClientId, string? ClientName, string? ClientPhone,
+    DateTime DateTime, decimal Price, string Status, string? NotCompletedReason);
 public record CreatePersonalWorkoutSlotDto(DateTime DateTime);
 public record CreatePersonalWorkoutRangeDto(DateTime StartDateTime, DateTime EndDateTime);
+public record TrainerWorkoutResultDto(bool IsConducted, string? NotConductedReason);
+public record ManagerAssignPersonalWorkoutDto(Guid ClientId, Guid TrainerId, int SlotId);
 public record TrainerProgressUpdateItemDto(int? TrackerId, string? Title, string? Unit, double Value);
 public record TrainerUpdateProgressDto(Guid ClientId, List<TrainerProgressUpdateItemDto> Updates);
 
@@ -118,3 +122,22 @@ public record AdminOverviewStatsDto(
     int TrainersCount,
     int ManagersCount,
     int AuditLogsLast24hCount);
+
+public record CreateManagedUserDto(
+    string FullName,
+    string Email,
+    string? PhoneNumber,
+    string Password);
+
+public record AdminSetUserPasswordDto(
+    string Password);
+
+public record ManagerAssignPurchaseDto(Guid UserId, int MembershipId);
+public record ManagerAssignGroupBookingDto(Guid UserId, int TrainingId);
+public record ClientListItemDto(
+    Guid Id,
+    string FullName,
+    string Email,
+    string? PhoneNumber,
+    string MembershipStatus,
+    string? MembershipName);

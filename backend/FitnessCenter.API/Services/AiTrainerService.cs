@@ -106,7 +106,7 @@ public class AiTrainerService
 
         var personalTrainings = await _db.PersonalWorkouts
             .Include(w => w.Trainer)
-            .Where(w => w.ClientId == userId && w.IsBooked)
+            .Where(w => w.ClientId == userId && w.Status != PersonalWorkoutStatus.Available)
             .OrderByDescending(w => w.DateTime)
             .Take(8)
             .Select(w => $"Персональная: {w.DateTime:yyyy-MM-dd HH:mm} UTC, тренер {w.Trainer.FullName}")

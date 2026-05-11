@@ -57,9 +57,8 @@ export default function MembershipsPage() {
 
   const handleBuy = async (membershipId: number) => {
     try {
-      const { data: purchase } = await api.post('/purchases', { membershipId });
-      await api.post(`/purchases/${purchase.id}/pay`);
-      notify('Абонемент успешно оплачен!', 'success');
+      await api.post('/purchases', { membershipId });
+      notify('Абонемент забронирован. Ожидайте подтверждение оплаты от менеджера.', 'success');
     } catch (err: any) {
       notify(err.response?.data?.detail || 'Ошибка покупки', 'error');
     }
@@ -107,11 +106,11 @@ export default function MembershipsPage() {
               <CardActions sx={{ p: 2 }}>
                 {user ? (
                   <Button variant="contained" fullWidth onClick={() => handleBuy(m.id)}>
-                    Купить
+                    Забронировать
                   </Button>
                 ) : (
                   <Button variant="outlined" fullWidth href="/login">
-                    Войдите для покупки
+                    Войдите для бронирования
                   </Button>
                 )}
               </CardActions>

@@ -14,7 +14,7 @@ public class MembershipAccessService
     {
         var purchases = await _db.Purchases
             .Where(p => p.UserId == userId &&
-                        (p.Status == PurchaseStatus.Paid || p.Status == PurchaseStatus.Pending))
+                        p.Status == PurchaseStatus.Paid)
             .Select(p => new
             {
                 p.CreatedAt,

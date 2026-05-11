@@ -12,6 +12,7 @@ import { useNotificationStore } from '../stores/notificationStore';
 import { useAuthStore } from '../stores/authStore';
 import { createGoogleCalendarLink } from '../utils/calendar';
 import type { PersonalWorkoutSlot, TrainerListItem } from '../types';
+import { formatPhone } from '../utils/phone';
 
 export default function PersonalWorkoutsPage() {
   const user = useAuthStore((s) => s.user);
@@ -126,6 +127,7 @@ export default function PersonalWorkoutsPage() {
                   </Avatar>
                   <Typography variant="h6">{trainer.fullName}</Typography>
                   <Typography variant="body2" color="text.secondary">{trainer.email}</Typography>
+                  <Typography variant="body2" color="text.secondary">{formatPhone(trainer.phoneNumber)}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Ранг: {trainer.trainerRank}
                   </Typography>

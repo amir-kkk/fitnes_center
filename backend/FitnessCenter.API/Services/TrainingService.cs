@@ -118,6 +118,7 @@ public class TrainingService
                 u.Id,
                 u.FullName,
                 u.Email,
+                u.PhoneNumber,
                 u.PhotoUrl,
                 u.TrainerRank ?? 1))
             .ToListAsync();
@@ -133,7 +134,7 @@ public class TrainingService
         coach.FullName = dto.FullName;
         coach.TrainerRank = Math.Clamp(dto.TrainerRank, 1, 5);
         await _db.SaveChangesAsync();
-        return new CoachDto(coach.Id, coach.FullName, coach.Email, coach.PhotoUrl, coach.TrainerRank ?? 1);
+        return new CoachDto(coach.Id, coach.FullName, coach.Email, coach.PhoneNumber, coach.PhotoUrl, coach.TrainerRank ?? 1);
     }
 
     public async Task DeleteCoachAsync(Guid id)
@@ -152,7 +153,7 @@ public class TrainingService
             throw new InvalidOperationException("Нельзя удалить тренера с активными групповыми записями");
 
         var hasActivePersonalBookings = await _db.PersonalWorkouts
-            .AnyAsync(w => w.TrainerId == id && w.IsBooked);
+            .AnyAsync(w => w.TrainerId == id && w.Status != PersonalWorkoutStatus.Available);
         if (hasActivePersonalBookings)
             throw new InvalidOperationException("Нельзя удалить тренера с активными персональными записями");
 
@@ -196,7 +197,7 @@ public class TrainingService
         coach.PhotoUrl = $"/uploads/trainers/{fileName}";
         await _db.SaveChangesAsync();
 
-        return new CoachDto(coach.Id, coach.FullName, coach.Email, coach.PhotoUrl, coach.TrainerRank ?? 1);
+        return new CoachDto(coach.Id, coach.FullName, coach.Email, coach.PhoneNumber, coach.PhotoUrl, coach.TrainerRank ?? 1);
     }
 
     private async Task EnsureTrainerAsync(Guid trainerId)

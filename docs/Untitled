@@ -1,1 +1,20 @@
---verbose
+Таблица 2.1 Таблица Пользователи (Users)
+Атрибут	Тип данных	Ограничение	Описание
+Id	UUID	PK, NOT NULL	Уникальный идентификатор
+Email	VARCHAR(255)	NOT NULL, UNIQUE	Электронная почта
+PasswordHash	TEXT	NOT NULL	Хеш пароля (BCrypt)
+Role	VARCHAR(20)	NOT NULL	Роль: Admin, User, Trainer
+FullName	TEXT	NOT NULL	Полное имя
+PhotoUrl	VARCHAR(500)	NULL	Путь к фотографии профиля
+TrainerRank	INT	NULL	Ранг тренера (1–5)
+CreatedAt	TIMESTAMPTZ	NOT NULL	Дата и время регистрации
+
+Таблица 2.2 Таблица Абонементы (Memberships)
+Атрибут	Тип данных	Ограничение	Описание
+Id	SERIAL	PK, NOT NULL	Уникальный идентификатор
+Name	TEXT	NOT NULL	Название абонемента
+Description	TEXT	NOT NULL	Описание
+Price	DECIMAL(10,2)	NOT NULL	Стоимость
+DurationDays	INT	NOT NULL	Срок действия в днях
+CreatedAt	TIMESTAMPTZ	NOT NULL	Дата создания
+

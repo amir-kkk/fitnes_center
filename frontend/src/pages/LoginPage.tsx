@@ -17,7 +17,9 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/');
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser?.role === 'Manager') navigate('/admin');
+      else navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Ошибка входа');
     } finally {

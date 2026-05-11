@@ -20,6 +20,7 @@ public class PersonalWorkoutService
                 u.Id,
                 u.FullName,
                 u.Email,
+                u.PhoneNumber,
                 u.PhotoUrl,
                 Math.Clamp(u.TrainerRank ?? 1, 1, 5)))
             .ToListAsync();
@@ -45,7 +46,7 @@ public class PersonalWorkoutService
             TrainerId = trainerId,
             DateTime = dto.DateTime,
             Price = CalculatePrice(trainer.TrainerRank),
-            IsBooked = false
+            Status = PersonalWorkoutStatus.Available
         };
 
         _db.PersonalWorkouts.Add(slot);
@@ -86,7 +87,7 @@ public class PersonalWorkoutService
                 TrainerId = trainerId,
                 DateTime = current,
                 Price = CalculatePrice(trainer.TrainerRank),
-                IsBooked = false
+                Status = PersonalWorkoutStatus.Available
             });
         }
 
@@ -101,36 +102,22 @@ public class PersonalWorkoutService
             .Include(w => w.Trainer)
             .Where(w => createdIds.Contains(w.Id))
             .OrderBy(w => w.DateTime)
-            .Select(w => new PersonalWorkoutSlotDto(
-                w.Id,
-                w.TrainerId,
-                w.Trainer.FullName,
-                w.ClientId,
-                w.Client != null ? w.Client.FullName : null,
-                w.DateTime,
-                w.Price,
-                w.IsBooked))
+            .Select(MapProjection())
             .ToListAsync();
     }
 
     public async Task<List<PersonalWorkoutSlotDto>> GetAvailableSlotsByTrainerAsync(Guid trainerId)
     {
         return await _db.PersonalWorkouts
-            .Where(w => w.TrainerId == trainerId && !w.IsBooked && w.DateTime > DateTime.UtcNow)
+            .Include(w => w.Trainer)
+            .Include(w => w.Client)
+            .Where(w => w.TrainerId == trainerId && w.Status == PersonalWorkoutStatus.Available && w.DateTime > DateTime.UtcNow)
             .Where(w => !_db.PersonalWorkouts.Any(b =>
                 b.TrainerId == trainerId &&
-                b.IsBooked &&
+                b.Status != PersonalWorkoutStatus.Available &&
                 (b.DateTime == w.DateTime.AddHours(-1) || b.DateTime == w.DateTime.AddHours(1))))
             .OrderBy(w => w.DateTime)
-            .Select(w => new PersonalWorkoutSlotDto(
-                w.Id,
-                w.TrainerId,
-                w.Trainer.FullName,
-                w.ClientId,
-                w.Client != null ? w.Client.FullName : null,
-                w.DateTime,
-                w.Price,
-                w.IsBooked))
+            .Select(MapProjection())
             .ToListAsync();
     }
 
@@ -144,7 +131,7 @@ public class PersonalWorkoutService
             .FirstOrDefaultAsync(w => w.Id == slotId)
             ?? throw new KeyNotFoundException("Слот не найден");
 
-        if (workout.IsBooked || workout.ClientId.HasValue)
+        if (workout.Status != PersonalWorkoutStatus.Available || workout.ClientId.HasValue)
             throw new InvalidOperationException("Слот уже занят");
 
         if (workout.DateTime <= DateTime.UtcNow)
@@ -152,7 +139,7 @@ public class PersonalWorkoutService
 
         var hasNeighbourBooking = await _db.PersonalWorkouts.AnyAsync(w =>
             w.TrainerId == workout.TrainerId &&
-            w.IsBooked &&
+            w.Status != PersonalWorkoutStatus.Available &&
             (w.DateTime == workout.DateTime.AddHours(-1) || w.DateTime == workout.DateTime.AddHours(1)));
         if (hasNeighbourBooking)
             throw new InvalidOperationException("Нельзя бронировать слот вплотную к уже занятому времени тренера");
@@ -163,8 +150,9 @@ public class PersonalWorkoutService
             throw new InvalidOperationException("Покупка слотов доступна только клиентам");
 
         workout.Price = CalculatePrice(workout.Trainer.TrainerRank);
-        workout.IsBooked = true;
+        workout.Status = PersonalWorkoutStatus.BookedUnpaid;
         workout.ClientId = clientId;
+        workout.NotCompletedReason = null;
         await _db.SaveChangesAsync();
 
         workout = await _db.PersonalWorkouts
@@ -189,15 +177,7 @@ public class PersonalWorkoutService
 
         return await query
             .OrderBy(w => w.DateTime)
-            .Select(w => new PersonalWorkoutSlotDto(
-                w.Id,
-                w.TrainerId,
-                w.Trainer.FullName,
-                w.ClientId,
-                w.Client != null ? w.Client.FullName : null,
-                w.DateTime,
-                w.Price,
-                w.IsBooked))
+            .Select(MapProjection())
             .ToListAsync();
     }
 
@@ -207,11 +187,12 @@ public class PersonalWorkoutService
             .FirstOrDefaultAsync(w => w.Id == slotId && w.ClientId == clientId)
             ?? throw new KeyNotFoundException("Запись не найдена");
 
-        if (!workout.IsBooked)
+        if (workout.Status == PersonalWorkoutStatus.Available)
             throw new InvalidOperationException("Слот уже свободен");
 
-        workout.IsBooked = false;
+        workout.Status = PersonalWorkoutStatus.Available;
         workout.ClientId = null;
+        workout.NotCompletedReason = null;
         await _db.SaveChangesAsync();
     }
 
@@ -229,15 +210,7 @@ public class PersonalWorkoutService
 
         return await query
             .OrderBy(w => w.DateTime)
-            .Select(w => new PersonalWorkoutSlotDto(
-                w.Id,
-                w.TrainerId,
-                w.Trainer.FullName,
-                w.ClientId,
-                w.Client != null ? w.Client.FullName : null,
-                w.DateTime,
-                w.Price,
-                w.IsBooked))
+            .Select(MapProjection())
             .ToListAsync();
     }
 
@@ -331,15 +304,7 @@ public class PersonalWorkoutService
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(w => new PersonalWorkoutSlotDto(
-                w.Id,
-                w.TrainerId,
-                w.Trainer.FullName,
-                w.ClientId,
-                w.Client != null ? w.Client.FullName : null,
-                w.DateTime,
-                w.Price,
-                w.IsBooked))
+            .Select(MapProjection())
             .ToListAsync();
 
         return new PagedResult<PersonalWorkoutSlotDto>(items, total, page, pageSize);
@@ -350,12 +315,83 @@ public class PersonalWorkoutService
         var workout = await _db.PersonalWorkouts.FirstOrDefaultAsync(w => w.Id == slotId)
             ?? throw new KeyNotFoundException("Слот не найден");
 
-        if (!workout.IsBooked)
+        if (workout.Status == PersonalWorkoutStatus.Available)
             throw new InvalidOperationException("Слот уже свободен");
 
-        workout.IsBooked = false;
+        workout.Status = PersonalWorkoutStatus.Available;
         workout.ClientId = null;
+        workout.NotCompletedReason = null;
         await _db.SaveChangesAsync();
+    }
+
+    public async Task<PersonalWorkoutSlotDto> ConfirmPaymentByManagerAsync(int slotId)
+    {
+        var workout = await _db.PersonalWorkouts
+            .Include(w => w.Trainer)
+            .Include(w => w.Client)
+            .FirstOrDefaultAsync(w => w.Id == slotId)
+            ?? throw new KeyNotFoundException("Слот не найден");
+
+        if (workout.Status != PersonalWorkoutStatus.BookedUnpaid)
+            throw new InvalidOperationException("Оплату можно подтвердить только для статуса 'Забронирована'");
+
+        workout.Status = PersonalWorkoutStatus.Paid;
+        await _db.SaveChangesAsync();
+        return MapWorkout(workout);
+    }
+
+    public async Task<PersonalWorkoutSlotDto> AssignClientToSlotByManagerAsync(int slotId, Guid clientId)
+    {
+        var workout = await _db.PersonalWorkouts
+            .Include(w => w.Trainer)
+            .Include(w => w.Client)
+            .FirstOrDefaultAsync(w => w.Id == slotId)
+            ?? throw new KeyNotFoundException("Слот не найден");
+
+        var client = await _db.Users.FirstOrDefaultAsync(u => u.Id == clientId && (u.Role == "User" || u.Role == "Client"))
+            ?? throw new KeyNotFoundException("Клиент не найден");
+
+        if (workout.Status != PersonalWorkoutStatus.Available)
+            throw new InvalidOperationException("Слот уже занят");
+
+        workout.ClientId = client.Id;
+        workout.Status = PersonalWorkoutStatus.Paid;
+        workout.NotCompletedReason = null;
+        await _db.SaveChangesAsync();
+
+        workout = await _db.PersonalWorkouts.Include(w => w.Trainer).Include(w => w.Client).FirstAsync(w => w.Id == slotId);
+        return MapWorkout(workout);
+    }
+
+    public async Task<PersonalWorkoutSlotDto> MarkWorkoutResultByTrainerAsync(Guid trainerId, int slotId, TrainerWorkoutResultDto dto)
+    {
+        var workout = await _db.PersonalWorkouts
+            .Include(w => w.Trainer)
+            .Include(w => w.Client)
+            .FirstOrDefaultAsync(w => w.Id == slotId && w.TrainerId == trainerId)
+            ?? throw new KeyNotFoundException("Тренировка не найдена");
+
+        if (workout.Status != PersonalWorkoutStatus.Paid)
+            throw new InvalidOperationException("Результат можно отметить только для оплаченной тренировки");
+
+        if (DateTime.UtcNow < workout.DateTime.AddHours(1))
+            throw new InvalidOperationException("Отметить результат можно только после завершения времени слота");
+
+        if (dto.IsConducted)
+        {
+            workout.Status = PersonalWorkoutStatus.Completed;
+            workout.NotCompletedReason = null;
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(dto.NotConductedReason))
+                throw new InvalidOperationException("Укажите причину непроведения тренировки");
+            workout.Status = PersonalWorkoutStatus.NotCompleted;
+            workout.NotCompletedReason = dto.NotConductedReason.Trim();
+        }
+
+        await _db.SaveChangesAsync();
+        return MapWorkout(workout);
     }
 
     private async Task EnsureTrainerCanManageClientAsync(Guid trainerId, Guid clientId)
@@ -363,7 +399,7 @@ public class PersonalWorkoutService
         var canManage = await _db.PersonalWorkouts.AnyAsync(w =>
             w.TrainerId == trainerId &&
             w.ClientId == clientId &&
-            w.IsBooked);
+            w.Status != PersonalWorkoutStatus.Available);
 
         if (!canManage)
             throw new UnauthorizedAccessException("Нет доступа к прогрессу этого клиента");
@@ -374,11 +410,29 @@ public class PersonalWorkoutService
             w.Id,
             w.TrainerId,
             w.Trainer.FullName,
+            w.Trainer.PhoneNumber,
             w.ClientId,
             w.Client?.FullName,
+            w.Client?.PhoneNumber,
             w.DateTime,
             CalculatePrice(w.Trainer.TrainerRank),
-            w.IsBooked
+            w.Status.ToString(),
+            w.NotCompletedReason
+        );
+
+    private static System.Linq.Expressions.Expression<Func<PersonalWorkout, PersonalWorkoutSlotDto>> MapProjection() =>
+        w => new PersonalWorkoutSlotDto(
+            w.Id,
+            w.TrainerId,
+            w.Trainer.FullName,
+            w.Trainer.PhoneNumber,
+            w.ClientId,
+            w.Client != null ? w.Client.FullName : null,
+            w.Client != null ? w.Client.PhoneNumber : null,
+            w.DateTime,
+            w.Price,
+            w.Status.ToString(),
+            w.NotCompletedReason
         );
 
     private static decimal CalculatePrice(int? rankNullable)
@@ -393,7 +447,7 @@ public class PersonalWorkoutService
             .AnyAsync(p => p.UserId == userId && p.Status == PurchaseStatus.Paid);
 
         if (!hasPaidMembership)
-            throw new InvalidOperationException("Запись доступна только после покупки и оплаты абонемента");
+            throw new InvalidOperationException("Запись доступна только при оплаченном абонементе");
     }
 
     private static ProgressTrackerDto MapTracker(ProgressTracker t)

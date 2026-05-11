@@ -34,6 +34,7 @@ public class AuthService
             Email = dto.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
             FullName = dto.FullName,
+            PhoneNumber = NormalizePhone(dto.PhoneNumber),
             Role = "User",
             CreatedAt = DateTime.UtcNow
         };
@@ -120,5 +121,12 @@ public class AuthService
     }
 
     private static UserDto MapUser(User u) =>
-        new(u.Id, u.Email, u.FullName, u.Role, u.PhotoUrl, u.TrainerRank, u.CreatedAt);
+        new(u.Id, u.Email, u.FullName, u.Role, u.PhoneNumber, u.PhotoUrl, u.TrainerRank, u.CreatedAt);
+
+    private static string? NormalizePhone(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+        return new string(value.Where(c => char.IsDigit(c) || c == '+').ToArray());
+    }
 }

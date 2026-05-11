@@ -5,8 +5,8 @@ import {
   Typography, Toolbar, AppBar, IconButton,
 } from '@mui/material';
 import {
-  People, CardMembership, FitnessCenter, ShoppingCart,
-  ArrowBack, Dashboard, SportsKabaddi, EventAvailable, History,
+  People, CardMembership, FitnessCenter,
+  ArrowBack, Dashboard, SportsKabaddi, EventAvailable, History, AccountBalanceWallet,
 } from '@mui/icons-material';
 import { useAuthStore } from '../stores/authStore';
 
@@ -21,11 +21,12 @@ export default function AdminLayout() {
 
   const menuItems = isManager
     ? [
+        { text: 'Клиенты', icon: <People />, path: '/admin/clients' },
         { text: 'Тренеры', icon: <SportsKabaddi />, path: '/admin/coaches' },
-        { text: 'Абонементы', icon: <CardMembership />, path: '/admin/memberships' },
+        { text: 'Каталог абонементов', icon: <CardMembership />, path: '/admin/memberships' },
         { text: 'Групповые тренировки', icon: <FitnessCenter />, path: '/admin/trainings' },
         { text: 'Персональные тренировки', icon: <EventAvailable />, path: '/admin/personal-workouts' },
-        { text: 'Покупки', icon: <ShoppingCart />, path: '/admin/purchases' },
+        { text: 'Финансы', icon: <AccountBalanceWallet />, path: '/admin/finances' },
       ]
     : [
         { text: 'Обзор', icon: <Dashboard />, path: '/admin' },
@@ -35,7 +36,7 @@ export default function AdminLayout() {
 
   useEffect(() => {
     if (isManager && location.pathname === '/admin') {
-      navigate('/admin/coaches', { replace: true });
+      navigate('/admin/clients', { replace: true });
       return;
     }
 
