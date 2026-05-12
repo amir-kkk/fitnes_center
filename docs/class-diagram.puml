@@ -1,118 +1,222 @@
 @startuml class-diagram
-title Диаграмма классов (сущности предметной области)
+title Диаграмма классов системы фитнес-центра
 
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam class {
+  BackgroundColor #EFF7FF
+  BorderColor #3B82F6
+  ArrowColor #374151
+}
+skinparam enum {
+  BackgroundColor #FFF9C4
+  BorderColor #EAB308
+}
 
+' ─── Enums ───────────────────────────────────────────
 enum PurchaseStatus {
-    Pending
-    Paid
+  Reserved = 0
+  Paid = 1
 }
 
 enum BookingStatus {
-    Active
-    Cancelled
+  Active = 0
+  Cancelled = 1
 }
 
-class User {
+enum PersonalWorkoutStatus {
+  Available = 0
+  BookedUnpaid = 1
+  Paid = 2
+  Completed = 3
+  NotCompleted = 4
+}
+
+' ─── Boundary (React UI компоненты) ──────────────────
+package "Boundary (UI)" #EEF2FF {
+  class RegisterPage        << (B,#AED6F1) >>
+  class LoginPage           << (B,#AED6F1) >>
+  class ProfilePage         << (B,#AED6F1) >>
+  class PersonalWorkoutsPage<< (B,#AED6F1) >>
+  class ProgressPage        << (B,#AED6F1) >>
+  class TrainerSchedulePage << (B,#AED6F1) >>
+  class AdminClientsPage    << (B,#AED6F1) >>
+  class AdminFinancesPage   << (B,#AED6F1) >>
+  class AdminTrainingsPage  << (B,#AED6F1) >>
+}
+
+' ─── Control (ASP.NET Core Сервисы + Контроллеры) ────
+package "Control (Services)" #F0FFF4 {
+  class AuthService {
+    +RegisterAsync(dto) : UserDto
+    +LoginAsync(dto) : string
+    -NormalizePhone(value) : string
+  }
+  class PurchaseService {
+    +CreateForUserAsync(userId, membershipId, markAsPaid) : PurchaseDto
+    +ConfirmPaymentAsync(purchaseId) : PurchaseDto
+    +GetAllAsync(onlyReserved) : List<PurchaseDto>
+  }
+  class PersonalWorkoutService {
+    +CreateTrainerSlotAsync(trainerId, dto) : SlotDto
+    +BuySlotAsync(slotId, clientId) : SlotDto
+    +ConfirmPaymentByManagerAsync(slotId) : SlotDto
+    +AssignClientToSlotByManagerAsync(dto) : SlotDto
+    +MarkWorkoutResultByTrainerAsync(slotId, dto) : SlotDto
+  }
+  class BookingService {
+    +CreateAsync(trainingId, userId) : BookingDto
+    +CreateForUserByManagerAsync(trainingId, userId) : BookingDto
+    +CancelAsync(bookingId, userId) : void
+  }
+  class MembershipAccessService {
+    +EnsurePaidMembershipAsync(userId) : void
+    +HasActiveMembershipAsync(userId) : bool
+  }
+  class AiTrainerService {
+    +ChatAsync(userId, message) : string
+    -BuildSystemPrompt(userId) : string
+    -CheckDailyLimit(userId) : void
+  }
+}
+
+' ─── Entity (EF Core модели) ─────────────────────────
+package "Entity (Domain Models)" #FFF8F0 {
+  class User {
     +Id : Guid <<PK>>
-    +Email : string <<unique>>
+    +Email : string <<UNIQUE>>
     +PasswordHash : string
     +Role : string
     +FullName : string
+    +PhoneNumber : string?
+    +PhotoUrl : string?
+    +TrainerRank : int?
     +CreatedAt : DateTime
-}
-
-class Membership {
+  }
+  class Membership {
     +Id : int <<PK>>
     +Name : string
-    +Description : string
-    +Price : decimal <<index>>
+    +Price : decimal
     +DurationDays : int
-    +CreatedAt : DateTime
-}
-
-class MembershipOption {
+  }
+  class MembershipOption {
     +Id : int <<PK>>
     +MembershipId : int <<FK>>
     +OptionText : string
-}
-
-class Category {
-    +Id : int <<PK>>
-    +Name : string
-}
-
-class Coach {
-    +Id : int <<PK>>
-    +FullName : string
-    +PhotoUrl : string?
-    +Specialization : string?
-}
-
-class Training {
-    +Id : int <<PK>>
-    +CategoryId : int <<FK, index>>
-    +CoachId : int <<FK>>
-    +Description : string
-    +CoachPhotoUrl : string?
-    +StartTime : DateTime <<index>>
-    +MaxParticipants : int
-}
-
-class Purchase {
+  }
+  class Purchase {
     +Id : int <<PK>>
     +UserId : Guid <<FK>>
     +MembershipId : int <<FK>>
     +PriceAtPurchase : decimal
     +Status : PurchaseStatus
     +CreatedAt : DateTime
-}
-
-class Booking {
+  }
+  class Category {
+    +Id : int <<PK>>
+    +Name : string
+  }
+  class Training {
+    +Id : int <<PK>>
+    +CategoryId : int <<FK>>
+    +TrainerId : Guid <<FK>>
+    +Description : string
+    +StartTime : DateTime
+    +MaxParticipants : int
+  }
+  class Booking {
     +Id : int <<PK>>
     +TrainingId : int <<FK>>
     +UserId : Guid <<FK>>
     +Status : BookingStatus
-    --
-    <<unique index>>
-    (TrainingId, UserId)
-    WHERE Status = Active
-}
-
-class ProgressTracker {
+    -- <<partial unique index>>
+    (TrainingId, UserId) WHERE Active
+  }
+  class PersonalWorkout {
+    +Id : int <<PK>>
+    +TrainerId : Guid <<FK>>
+    +ClientId : Guid? <<FK>>
+    +DateTime : DateTime
+    +Price : decimal
+    +Status : PersonalWorkoutStatus
+    +NotCompletedReason : string?
+    -- <<unique index>>
+    (TrainerId, DateTime)
+  }
+  class ProgressTracker {
     +Id : int <<PK>>
     +UserId : Guid <<FK>>
     +Title : string
     +GoalValue : double
     +Unit : string
-    +CreatedAt : DateTime
-}
-
-class ProgressEntry {
+  }
+  class ProgressEntry {
     +Id : int <<PK>>
     +TrackerId : int <<FK>>
     +Value : double
     +DateRecorded : DateTime
+  }
+  class AiTrainerUsage {
+    +Id : int <<PK>>
+    +UserId : Guid <<FK>>
+    +UsageDate : Date
+    +MessageCount : int
+  }
+  class AuditLog {
+    +Id : long <<PK>>
+    +UserId : Guid? <<FK>>
+    +EntityName : string
+    +Action : string
+    +Timestamp : DateTime
+    +OldValues : string?
+    +NewValues : string?
+  }
 }
 
+' ─── Связи Boundary → Control ────────────────────────
+RegisterPage       ..> AuthService
+LoginPage          ..> AuthService
+ProfilePage        ..> PurchaseService
+PersonalWorkoutsPage ..> PersonalWorkoutService
+TrainerSchedulePage  ..> PersonalWorkoutService
+AdminFinancesPage    ..> PurchaseService
+AdminFinancesPage    ..> PersonalWorkoutService
+AdminClientsPage     ..> AuthService
+AdminTrainingsPage   ..> BookingService
 
+' ─── Связи Control → Entity ──────────────────────────
+AuthService            --> User
+PurchaseService        --> Purchase
+PurchaseService        --> MembershipAccessService
+PersonalWorkoutService --> PersonalWorkout
+PersonalWorkoutService --> MembershipAccessService
+BookingService         --> Booking
+BookingService         --> MembershipAccessService
+MembershipAccessService --> Purchase
+AiTrainerService       --> AiTrainerUsage
 
-User "1" --> "*" Purchase
-User "1" --> "*" Booking
-User "1" --> "*" ProgressTracker
+' ─── Связи Entity ────────────────────────────────────
+User          "1" --> "*" Purchase
+User          "1" --> "*" Booking
+User          "1" --> "*" PersonalWorkout : trainer
+User          "1" --> "*" PersonalWorkout : client
+User          "1" --> "*" ProgressTracker
+User          "1" --> "*" AiTrainerUsage
+User          "1" --> "*" AuditLog
 
-Membership "1" --> "*" MembershipOption : содержит 
-Membership "1" --> "*" Purchase
+Membership    "1" --> "*" MembershipOption
+Membership    "1" --> "*" Purchase
 
-Category "1" --> "*" Training : тип >
-Coach "1" --> "*" Training : ведёт >
+Category      "1" --> "*" Training
+Training      "1" --> "*" Booking
 
-Training "1" --> "*" Booking
+ProgressTracker "1" --> "*" ProgressEntry
 
-ProgressTracker "1" --> "*" ProgressEntry : замеры 
-
-Purchase --> PurchaseStatus
-Booking --> BookingStatus
+Purchase     --> PurchaseStatus
+Booking      --> BookingStatus
+PersonalWorkout --> PersonalWorkoutStatus
 
 @enduml

@@ -19,7 +19,6 @@ import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminCoachesPage from './pages/admin/AdminCoachesPage';
 import AdminMembershipsPage from './pages/admin/AdminMembershipsPage';
 import AdminTrainingsPage from './pages/admin/AdminTrainingsPage';
-import AdminPurchasesPage from './pages/admin/AdminPurchasesPage';
 import AdminPersonalWorkoutsPage from './pages/admin/AdminPersonalWorkoutsPage';
 import AdminAuditLogsPage from './pages/admin/AdminAuditLogsPage';
 import AdminClientsPage from './pages/admin/AdminClientsPage';
@@ -93,9 +92,6 @@ export default function App() {
         } />
         <Route path="/admin/trainings" element={
           <ProtectedRoute requiredRole="Manager"><AdminTrainingsPage /></ProtectedRoute>
-        } />
-        <Route path="/admin/purchases" element={
-          <ProtectedRoute requiredRole="Manager"><AdminPurchasesPage /></ProtectedRoute>
         } />
         <Route path="/admin/finances" element={
           <ProtectedRoute requiredRole="Manager"><AdminFinancesPage /></ProtectedRoute>

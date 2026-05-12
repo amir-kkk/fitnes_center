@@ -1,0 +1,83 @@
+@startuml personal-workout-lifecycle
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam roundcorner 8
+skinparam ActivityBackgroundColor #EFF7FF
+skinparam ActivityBorderColor #3B82F6
+skinparam ActivityDiamondBackgroundColor #FFF9C4
+skinparam ArrowColor #374151
+skinparam NoteBackgroundColor #F0FFF4
+skinparam NoteBorderColor #22C55E
+
+title Жизненный цикл персональной тренировки (PersonalWorkoutStatus)
+
+start
+
+:Тренер открывает временной слот\nв личном кабинете;
+note right
+  **Status = Available**
+  ClientId = NULL
+end note
+
+if (Способ назначения?) then (Клиент бронирует самостоятельно)
+
+  :Клиент выбирает тренера\nи нажимает «Забронировать»;
+  note right: Проверка: активный абонемент (Paid)
+  :Система создаёт запись\nи закрепляет ClientId;
+  note right
+    **Status = BookedUnpaid**
+  end note
+
+  if (Бронирование отменено?) then (да — клиентом или менеджером)
+    :Запись ClientId очищается;
+    note right
+      **Status = Available**
+    end note
+    stop
+  else (нет — ожидание оплаты)
+  endif
+
+  :Менеджер подтверждает\nфакт оплаты в разделе «Финансы»;
+  note right
+    **Status = Paid**
+  end note
+
+else (Менеджер назначает напрямую)
+
+  :Менеджер выбирает клиента\nи свободный слот\nв панели управления;
+  note right
+    **Status = Paid**
+    (этап BookedUnpaid пропускается)
+  end note
+
+endif
+
+:Тренировка запланирована;
+note right: Тренер и клиент видят друг\nдруга с номером телефона
+
+repeat
+  :Ожидание наступления\nвремени слота;
+repeat while (Текущее время < DateTime слота?) is (да) not (нет (время истекло))
+
+:Тренеру становятся доступны кнопки\n«Тренировка проведена» / «Не проведена»;
+
+if (Тренировка состоялась?) then (да)
+  :Тренер нажимает «Проведена»;
+  note right
+    **Status = Completed**
+  end note
+else (нет)
+  :Тренер нажимает «Не проведена»\nи вводит причину в модальном окне;
+  note right
+    **Status = NotCompleted**
+    NotCompletedReason = "Клиент не пришёл" (или иное)
+  end note
+endif
+
+:Итоговый статус отображается\nв панели менеджера;
+
+stop
+
+@enduml

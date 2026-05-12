@@ -37,7 +37,7 @@ export default function HomePage() {
         borderRadius: 4, color: '#FFFFFF', mb: 6,
       }}>
         <Typography variant="h3" fontWeight={800} gutterBottom>
-          Добро пожаловать в FitnessCenter
+          Добро пожаловать в Центр фитнеса и здоровья
         </Typography>
         <Typography variant="h6" sx={{ mb: 4, color: '#D9D9D9' }}>
           Современный фитнес-центр с групповыми тренировками, персональным подходом

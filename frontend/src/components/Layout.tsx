@@ -27,7 +27,7 @@ export default function Layout() {
           <FitnessCenter sx={{ mr: 1 }} />
           <Typography variant="h6" component={RouterLink} to="/"
             sx={{ flexGrow: 0, mr: 4, textDecoration: 'none', color: 'inherit', fontWeight: 700 }}>
-            FitnessCenter
+            Центр фитнеса и здоровья
           </Typography>
 
           <Box sx={{ flexGrow: 1, display: 'flex', gap: 0.5 }}>
@@ -100,7 +100,7 @@ export default function Layout() {
 
       <Box component="footer" sx={{ py: 2, textAlign: 'center', bgcolor: '#2C2C2C' }}>
         <Typography variant="body2" sx={{ color: '#D9D9D9' }}>
-          &copy; {new Date().getFullYear()} FitnessCenter. Учебный проект.
+          &copy; {new Date().getFullYear()} Центр фитнеса и здоровья. Учебный проект.
         </Typography>
       </Box>
 
